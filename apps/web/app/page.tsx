@@ -94,7 +94,7 @@ export default function LandingPage() {
       {/*  TopAppBar  */}
       <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-none bg-[#0A0B0F]/90 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <img alt="CheckMate Logo" className="h-8 w-auto" src="/logo.png" />
+          <Image alt="CheckMate Logo" width={120} height={32} className="h-8 w-auto" src="/logo.png" />
           <span className="text-headline-md font-headline-md font-bold text-primary">
             CheckMate
           </span>
@@ -163,13 +163,13 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="md:col-span-5 relative mt-12 md:mt-0 h-[500px] md:h-[700px] flex items-center justify-center md:justify-end">
-              <div className="absolute top-10 right-10 text-border font-stats-mono text-4xl opacity-50 select-none">
-                H8
-              </div>
-              <img
+              <Image
                 alt="A dramatic close-up of a premium, battle-worn golden chess king piece, emerging from deep shadows. High contrast, cinematic lighting with a luxury horology feel."
-                className="h-full object-cover object-left mask-image-linear-gradient"
+                className="object-cover object-left mask-image-linear-gradient"
                 src="/hero.png"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
           </div>
@@ -530,8 +530,10 @@ export default function LandingPage() {
       <footer className="w-full px-margin-desktop py-section-gap grid grid-cols-1 md:grid-cols-4 gap-gutter bg-surface border-t border-primary/30">
         <div className="col-span-1 md:col-span-4 mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <img
+            <Image
               alt="CheckMate Logo"
+              width={100}
+              height={24}
               className="h-6 w-auto grayscale opacity-50"
               src="/logo.png"
             />

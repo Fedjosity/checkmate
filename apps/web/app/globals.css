@@ -7,3 +7,74 @@
     @apply bg-background text-white;
   }
 }
+
+
+/* Stitch Custom Styles */
+
+        body { background-color: #0A0B0F; color: #F0F0EE; overflow-x: hidden; }
+        .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(26, 31, 46, 0.5) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(26, 31, 46, 0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #FFE08F 0%, #C9A84C 100%);
+            color: #000;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(201, 168, 76, 0.15);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.3);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #C9A84C;
+            color: #C9A84C;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            border-width: 2px;
+            background: rgba(201, 168, 76, 0.05);
+        }
+        .luxury-glow {
+            box-shadow: inset 0 0 20px rgba(201, 168, 76, 0.05), 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .angled-divider {
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4vw), 0 100%);
+        }
+        .angled-divider-reverse {
+            clip-path: polygon(0 4vw, 100% 0, 100% 100%, 0 100%);
+        }
+        .ticker {
+            animation: ticker 20s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Luxury Card Animations */
+        .game-mode-card {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .game-mode-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(201, 168, 76, 0.2);
+            border-color: rgba(201, 168, 76, 0.5);
+        }
+        .game-mode-card .material-symbols-outlined {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .game-mode-card:hover .material-symbols-outlined {
+            transform: scale(1.1);
+            color: #e6c364; /* primary gold */
+        }
+        
+        .blitz-highlight:hover {
+            transform: translateY(-8px) scale(1.07) !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 30px rgba(201, 168, 76, 0.4) !important;
+        }
+    

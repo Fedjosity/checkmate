@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { joinWaitlistSchema, JoinWaitlistDTO } from "@checkmate/shared-types";
 import { joinWaitlist } from "@/lib/api/waitlist";
 import { useRouter } from "next/navigation";
+import { CountrySelect, PhoneCodeSelect } from "@/components/ui/CountryDropdowns";
 
 export const SignupForm = () => {
   const router = useRouter();
@@ -19,6 +20,8 @@ export const SignupForm = () => {
     resolver: zodResolver(joinWaitlistSchema),
     defaultValues: {
       chessLevel: "casual",
+      country: "United States",
+      countryCode: "+1",
     },
   });
 
@@ -67,11 +70,7 @@ export const SignupForm = () => {
       <div className="flex flex-col gap-4 md:flex-row">
         <div className="w-1/3 flex flex-col gap-2">
           <label className="font-label-caps text-text-primary">Code</label>
-          <input
-            {...register("countryCode")}
-            className="w-full bg-surface border border-border px-4 py-3 text-text-primary rounded-sm focus:outline-none focus:border-primary transition-colors"
-            placeholder="+1"
-          />
+          <PhoneCodeSelect {...register("countryCode")} />
           {errors.countryCode && <span className="text-error text-sm">{errors.countryCode.message}</span>}
         </div>
         
@@ -88,11 +87,7 @@ export const SignupForm = () => {
 
       <div className="flex flex-col gap-2">
         <label className="font-label-caps text-text-primary">Country</label>
-        <input
-          {...register("country")}
-          className="w-full bg-surface border border-border px-4 py-3 text-text-primary rounded-sm focus:outline-none focus:border-primary transition-colors"
-          placeholder="United States"
-        />
+        <CountrySelect {...register("country")} />
         {errors.country && <span className="text-error text-sm">{errors.country.message}</span>}
       </div>
 

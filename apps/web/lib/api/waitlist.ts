@@ -9,15 +9,15 @@ const publicClient = axios.create({
 
 export const joinWaitlist = async (data: JoinWaitlistDTO) => {
   const response = await publicClient.post("/v1/waitlist/join", data);
-  return response.data;
+  return response.data.data;
 };
 
 export const checkWaitlistStatus = async (email: string) => {
   const response = await publicClient.get(`/v1/waitlist/status?email=${encodeURIComponent(email)}`);
-  return response.data;
+  return response.data.data;
 };
 
 export const getWaitlistCount = async () => {
   const response = await publicClient.get("/v1/waitlist/count");
-  return response.data;
+  return response.data.data;
 };

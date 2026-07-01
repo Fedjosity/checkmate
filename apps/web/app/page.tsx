@@ -519,7 +519,7 @@ export default function LandingPage() {
             Your Board Is Waiting.
           </h2>
           <p className="font-body-lg text-on-surface-variant max-w-xl mx-auto mb-10">
-            Join the beta and secure your starting bankroll bonus. Serious
+            Join the beta and secure your early access spot. Serious
             players only.
           </p>
           <button className="btn-primary px-12 py-5 font-headline-md text-headline-md rounded-sm shadow-[0_0_40px_rgba(201,168,76,0.3)] hover:shadow-[0_0_60px_rgba(201,168,76,0.5)]">

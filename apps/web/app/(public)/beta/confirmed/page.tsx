@@ -41,14 +41,6 @@ const ConfirmationContent = () => {
             <p className="text-text-muted text-sm">We will send your exclusive activation link when your spot opens up.</p>
           </div>
         </div>
-        
-        <div className="flex gap-4 items-start">
-          <div className="bg-border text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
-          <div>
-            <h4 className="text-text-primary font-bold mb-1">Fund your account</h4>
-            <p className="text-text-muted text-sm">Deposit via crypto or fiat to establish your initial bankroll.</p>
-          </div>
-        </div>
       </div>
 
       <Link

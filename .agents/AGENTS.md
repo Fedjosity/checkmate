@@ -11,5 +11,8 @@
 - **Borders & UI Elements**: No 1px solid borders. Favor tonal shifts, inner shadows, and the `.luxury-glow` custom class for depth and a premium look.
 - **Animations**: Prefer `gsap` with `ScrollTrigger` for fluid, scrubbed micro-animations. Ensure `react-lenis` Smooth Scroll wraps the application layout.
 
+## Copywriting & Terminology
+- **No Gambling Terminology**: CheckMate is a platform for elite professional chess, NOT a gambling or betting platform. Never use words like "bet", "gambling", "wager", "high stakes", or "odds" anywhere in the UI or marketing copy. Always frame features around "skill", "competition", "professional", and "elite level".
+
 ## Documentation
 - Continuously update this `.agents/AGENTS.md` file whenever new architectural or design decisions are made to ensure future contexts align with the project's standards.

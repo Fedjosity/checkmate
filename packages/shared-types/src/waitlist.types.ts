@@ -8,6 +8,12 @@ export const joinWaitlistSchema = z.object({
   country: z.string().min(1, "Country is required"),
   chessLevel: z.enum(["casual", "club", "competitive"]),
   referredBy: z.string().email("Invalid referrer email").optional().or(z.literal("")),
-});
+}).refine(
+  (data) => !data.referredBy || data.referredBy.toLowerCase() !== data.email.toLowerCase(),
+  {
+    message: "You cannot refer yourself!",
+    path: ["referredBy"],
+  }
+);
 
 export type JoinWaitlistDTO = z.infer<typeof joinWaitlistSchema>;

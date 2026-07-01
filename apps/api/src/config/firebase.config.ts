@@ -10,9 +10,15 @@ export const initFirebase = () => {
     if (env.FIREBASE_SERVICE_ACCOUNT_JSON) {
       try {
         const serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        if (serviceAccount.private_key) {
+          // Fix literal \n strings back into actual newlines
+          serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
         credential = admin.credential.cert(serviceAccount);
-      } catch (error) {
+      } catch (error: any) {
         console.warn('Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON, falling back to default application credentials.');
+        console.error('Parse Error:', error.message);
+        console.error('First 50 chars of env var:', env.FIREBASE_SERVICE_ACCOUNT_JSON.substring(0, 50));
         credential = admin.credential.applicationDefault();
       }
     } else {

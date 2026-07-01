@@ -13,3 +13,4 @@ const PORT = env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`[Server]: CheckMate API is running on port ${PORT}`);
 });
+ 

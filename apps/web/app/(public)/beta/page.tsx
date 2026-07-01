@@ -23,7 +23,7 @@ export default function BetaSignupPage() {
             Claim Your Seat at the Board
           </h1>
           <p className="text-text-muted font-body-md">
-            Join the elite ranks and experience the future of high-stakes chess.
+            Join the elite ranks and experience the future of professional chess.
           </p>
         </div>
 

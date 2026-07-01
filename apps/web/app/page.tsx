@@ -154,7 +154,7 @@ export default function LandingPage() {
               </h1>
               <p className="font-body-lg text-body-lg text-on-surface-variant max-w-lg mt-4">
                 The arena for serious chess competitors. Stake your skill, play
-                for high stakes, and dominate the board in a premium cinematic
+                at the highest level, and dominate the board in a premium cinematic
                 environment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
@@ -220,7 +220,7 @@ export default function LandingPage() {
                 Compete
               </h3>
               <p className="text-on-surface-variant font-body-md">
-                Enter a high-stakes lobby. Our matchmaking pairs you with
+                Enter an elite lobby. Our matchmaking pairs you with
                 verified opponents of equal skill.
               </p>
             </div>
@@ -422,7 +422,7 @@ export default function LandingPage() {
               </h2>
               <p className="font-body-lg text-on-surface-variant mb-8">
                 We built CheckMate for purists. No algorithms determining your
-                fate. Just you, the board, and the stakes.
+                fate. Just you, the board, and your skill.
               </p>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">

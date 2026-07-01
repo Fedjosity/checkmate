@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { joinWaitlistSchema, JoinWaitlistDTO } from "@checkmate/shared-types";
 import { joinWaitlist } from "@/lib/api/waitlist";
 import { useRouter } from "next/navigation";
-import { CountrySelect, PhoneCodeSelect } from "@/components/ui/CountryDropdowns";
+import { CountrySelect, PhoneCodeSelect, COUNTRIES } from "@/components/ui/CountryDropdowns";
+import { AsYouType, CountryCode } from "libphonenumber-js";
 
 export const SignupForm = () => {
   const router = useRouter();
@@ -15,6 +16,8 @@ export const SignupForm = () => {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<JoinWaitlistDTO>({
     resolver: zodResolver(joinWaitlistSchema),
@@ -70,24 +73,65 @@ export const SignupForm = () => {
       <div className="flex flex-col gap-4 md:flex-row">
         <div className="w-1/3 flex flex-col gap-2">
           <label className="font-label-caps text-text-primary">Code</label>
-          <PhoneCodeSelect {...register("countryCode")} />
+          {(() => {
+            const { onChange: formOnChange, ...restCodeReg } = register("countryCode");
+            return (
+              <PhoneCodeSelect
+                {...restCodeReg}
+                onChange={(e) => {
+                  formOnChange(e);
+                  const selectedCode = e.target.value;
+                  const matchingCountry = COUNTRIES.find((c) => c.code === selectedCode);
+                  if (matchingCountry) {
+                    setValue("country", matchingCountry.name, { shouldValidate: true });
+                  }
+                }}
+              />
+            );
+          })()}
           {errors.countryCode && <span className="text-error text-sm">{errors.countryCode.message}</span>}
         </div>
         
         <div className="w-2/3 flex flex-col gap-2">
           <label className="font-label-caps text-text-primary">Phone Number</label>
-          <input
-            {...register("phone")}
-            className="w-full bg-surface border border-border px-4 py-3 text-text-primary rounded-sm focus:outline-none focus:border-primary transition-colors"
-            placeholder="555-0199"
-          />
+          {(() => {
+            const { onChange: formOnChange, ...restPhoneReg } = register("phone");
+            return (
+              <input
+                {...restPhoneReg}
+                onChange={(e) => {
+                  const currentCode = watch("countryCode");
+                  const iso = COUNTRIES.find(c => c.code === currentCode)?.iso as CountryCode | undefined;
+                  const formatter = new AsYouType(iso);
+                  e.target.value = formatter.input(e.target.value);
+                  formOnChange(e);
+                }}
+                className="w-full bg-surface border border-border px-4 py-3 text-text-primary rounded-sm focus:outline-none focus:border-primary transition-colors"
+              />
+            );
+          })()}
           {errors.phone && <span className="text-error text-sm">{errors.phone.message}</span>}
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
         <label className="font-label-caps text-text-primary">Country</label>
-        <CountrySelect {...register("country")} />
+        {(() => {
+          const { onChange: formOnChange, ...restCountryReg } = register("country");
+          return (
+            <CountrySelect
+              {...restCountryReg}
+              onChange={(e) => {
+                formOnChange(e);
+                const selectedCountry = e.target.value;
+                const matchingData = COUNTRIES.find((c) => c.name === selectedCountry);
+                if (matchingData) {
+                  setValue("countryCode", matchingData.code, { shouldValidate: true });
+                }
+              }}
+            />
+          );
+        })()}
         {errors.country && <span className="text-error text-sm">{errors.country.message}</span>}
       </div>
 
@@ -99,7 +143,7 @@ export const SignupForm = () => {
         >
           <option value="casual">Casual (Just play for fun)</option>
           <option value="club">Club Player (Local tournaments/online ratings)</option>
-          <option value="competitive">Competitive (Titled/High Stakes)</option>
+          <option value="competitive">Competitive (Titled/Elite Level)</option>
         </select>
         {errors.chessLevel && <span className="text-error text-sm">{errors.chessLevel.message}</span>}
       </div>

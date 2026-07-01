@@ -94,7 +94,13 @@ export default function LandingPage() {
       {/*  TopAppBar  */}
       <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-none bg-[#0A0B0F]/90 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <Image alt="CheckMate Logo" width={120} height={32} className="h-8 w-auto" src="/logo.png" />
+          <Image
+            alt="CheckMate Logo"
+            width={120}
+            height={32}
+            className="h-8 w-auto"
+            src="/logo.png"
+          />
           <span className="text-headline-md font-headline-md font-bold text-primary">
             CheckMate
           </span>
@@ -154,15 +160,9 @@ export default function LandingPage() {
                 <button className="btn-primary px-8 py-4 font-label-caps text-label-caps rounded-sm w-full sm:w-auto text-center">
                   Claim Your Spot
                 </button>
-                <button className="btn-secondary px-8 py-4 font-label-caps text-label-caps rounded-sm w-full sm:w-auto text-center flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">
-                    play_arrow
-                  </span>{" "}
-                  View Trailer
-                </button>
               </div>
             </div>
-            <div className="md:col-span-5 relative mt-12 md:mt-0 h-[500px] md:h-[700px] flex items-center justify-center md:justify-end">
+            <div className="md:col-span-5 relative mt-12 md:mt-0 h-[500px] md:h-[700px] flex items-center justify-center md:justify-end hidden md:block">
               <Image
                 alt="A dramatic close-up of a premium, battle-worn golden chess king piece, emerging from deep shadows. High contrast, cinematic lighting with a luxury horology feel."
                 className="object-cover object-left mask-image-linear-gradient"

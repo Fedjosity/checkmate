@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -131,9 +132,9 @@ export default function LandingPage() {
             Trust
           </a>
         </div>
-        <button className="btn-primary px-6 py-3 font-label-caps text-label-caps rounded-sm hidden md:block">
+        <Link href="/beta" className="btn-primary px-6 py-3 font-label-caps text-label-caps rounded-sm hidden md:block text-center">
           Join Beta
-        </button>
+        </Link>
       </nav>
       {/*  Hero Section  */}
       <section className="relative min-h-screen flex items-center pt-24 overflow-hidden bg-grid-pattern angled-divider pb-24">
@@ -157,9 +158,9 @@ export default function LandingPage() {
                 environment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
-                <button className="btn-primary px-8 py-4 font-label-caps text-label-caps rounded-sm w-full sm:w-auto text-center">
+                <Link href="/beta" className="btn-primary px-8 py-4 font-label-caps text-label-caps rounded-sm w-full sm:w-auto text-center">
                   Claim Your Spot
-                </button>
+                </Link>
               </div>
             </div>
             <div className="md:col-span-5 relative mt-12 md:mt-0 h-[500px] md:h-[700px] flex items-center justify-center md:justify-end hidden md:block">

@@ -28,7 +28,8 @@ export const SignupForm = () => {
       const result = await joinWaitlist(data);
       router.push(`/beta/confirmed?email=${encodeURIComponent(result.email)}&position=${result.position}`);
     } catch (err: any) {
-      setError(err?.message || "Something went wrong. Please try again.");
+      const apiMessage = err?.response?.data?.message;
+      setError(apiMessage || err?.message || "Something went wrong. Please try again.");
     }
   };
 

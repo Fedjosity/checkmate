@@ -27,7 +27,8 @@ export default function BetaStatusPage() {
       const data = await checkWaitlistStatus(email);
       setStatusData(data);
     } catch (err: any) {
-      setError(err?.message || "Email not found on the waitlist.");
+      const apiMessage = err?.response?.data?.message;
+      setError(apiMessage || err?.message || "Email not found on the waitlist.");
     } finally {
       setIsLoading(false);
     }

@@ -19,7 +19,7 @@ export const Navbar = () => {
       </div>
       <Link
         href="/beta"
-        className="btn-primary px-6 py-3 font-label-caps text-label-caps rounded-sm hidden md:block text-center"
+        className="btn-primary px-6 py-3 font-label-caps text-label-caps rounded-sm  text-center"
       >
         Join Beta
       </Link>

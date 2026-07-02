@@ -14,8 +14,8 @@ export const HowItWorks = () => {
           <div className="h-1 w-16 bg-primary mx-auto"></div>
         </div>
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12 mt-20">
-          <div className="hidden md:block absolute top-1/2 left-[16%] right-[16%] h-0.5 bg-border -translate-y-1/2 z-0"></div>
-          <div className="relative z-10 flex flex-col items-center text-center bg-surface-container p-8 border border-border luxury-glow rounded-sm">
+          <div className="how-line hidden md:block absolute top-1/2 left-[16%] right-[16%] h-0.5 bg-border -translate-y-1/2 z-0 origin-left scale-x-0"></div>
+          <div className="how-card relative z-10 flex flex-col items-center text-center bg-surface-container p-8 border border-border luxury-glow rounded-sm opacity-0">
             <div className="absolute -top-3 -right-3 text-border font-stats-mono text-lg">
               A1
             </div>
@@ -32,7 +32,7 @@ export const HowItWorks = () => {
               gateways for instant liquidity.
             </p>
           </div>
-          <div className="relative z-10 flex flex-col items-center text-center bg-[#0D1017] p-8 border border-primary/20 luxury-glow rounded-sm transform md:-translate-y-6">
+          <div className="how-card relative z-10 flex flex-col items-center text-center bg-[#0D1017] p-8 border border-primary/20 luxury-glow rounded-sm transform md:-translate-y-6 opacity-0">
             <div className="absolute -top-3 -right-3 text-border font-stats-mono text-lg">
               E4
             </div>
@@ -49,7 +49,7 @@ export const HowItWorks = () => {
               opponents of equal skill.
             </p>
           </div>
-          <div className="relative z-10 flex flex-col items-center text-center bg-surface-container p-8 border border-border luxury-glow rounded-sm">
+          <div className="how-card relative z-10 flex flex-col items-center text-center bg-surface-container p-8 border border-border luxury-glow rounded-sm opacity-0">
             <div className="absolute -top-3 -right-3 text-border font-stats-mono text-lg">
               H8
             </div>

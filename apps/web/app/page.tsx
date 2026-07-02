@@ -21,75 +21,122 @@ export default function LandingPage() {
 
   useGSAP(
     () => {
-      // Hero Entrance
+      // 1. Navbar drop-in
       gsap.fromTo(
-        ".hero-content",
-        { y: 50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", stagger: 0.2 },
+        "nav",
+        { y: -100, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, ease: "power3.out" }
       );
 
-      // Angled dividers parallax/scrub
-      gsap.to(".angled-divider", {
-        scrollTrigger: {
-          trigger: ".angled-divider",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 1,
-        },
-        backgroundPosition: "50% 100px",
+      // 2. Hero Content stagger
+      gsap.fromTo(
+        ".hero-content > *",
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", stagger: 0.15, delay: 0.2 }
+      );
+
+      // 3. Hero Image subtle scale and rotate
+      gsap.fromTo(
+        ".hero-content img",
+        { scale: 1.1, rotationZ: 2, opacity: 0 },
+        { scale: 1, rotationZ: 0, opacity: 1, duration: 1.5, ease: "power2.out", delay: 0.4 }
+      );
+
+      // 4. Background Angled Dividers Parallax
+      gsap.utils.toArray(".angled-divider").forEach((divider: any) => {
+        gsap.to(divider, {
+          scrollTrigger: {
+            trigger: divider,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1.5,
+          },
+          backgroundPosition: "50% 150px",
+          ease: "none",
+        });
       });
 
-      // Game Mode Cards entrance with Scrub
+      // 5. How It Works - Cards 3D flip up
       gsap.fromTo(
-        ".game-mode-card",
-        { y: 100, opacity: 0 },
+        ".how-card",
+        { y: 60, opacity: 0, rotationX: -15 },
         {
           y: 0,
           opacity: 1,
-          stagger: 0.1,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: "#game-modes",
-            start: "top 80%",
-            end: "bottom 60%",
-            scrub: 1, // Animates back when scrolled up
-          },
-        },
-      );
-
-      // How It Works Cards
-      gsap.fromTo(
-        "#how-it-works .p-8",
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
+          rotationX: 0,
           stagger: 0.2,
+          duration: 1,
           ease: "power2.out",
           scrollTrigger: {
             trigger: "#how-it-works",
-            start: "top 70%",
-            end: "center center",
+            start: "top 75%",
+            end: "center 60%",
             scrub: 1,
           },
-        },
+        }
       );
 
-      // Stats Scrub
+      // 6. How It Works - Connecting Line Draw
+      gsap.to(".how-line", {
+        scaleX: 1,
+        ease: "power2.inOut",
+        duration: 1.5,
+        scrollTrigger: {
+          trigger: "#how-it-works",
+          start: "top 60%",
+          end: "center center",
+          scrub: 1,
+        },
+      });
+
+      // 7. Trust Section - Header and Items staggered fade-in left
       gsap.fromTo(
-        "#live-stats .p-8",
-        { opacity: 0, y: 30 },
+        [".trust-header", ".trust-item"],
+        { x: -40, opacity: 0 },
         {
+          x: 0,
           opacity: 1,
-          y: 0,
-          stagger: 0.2,
+          stagger: 0.15,
+          duration: 1,
+          ease: "power2.out",
           scrollTrigger: {
-            trigger: "#live-stats",
-            start: "top 80%",
+            trigger: "#trust",
+            start: "top 75%",
             end: "center 50%",
             scrub: 1,
           },
+        }
+      );
+
+      // 8. Final CTA - Massive King slow rotation on scrub
+      gsap.to(".cta-icon", {
+        rotationZ: 15,
+        scale: 1.1,
+        scrollTrigger: {
+          trigger: ".cta-icon",
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 2,
         },
+      });
+
+      // 9. Final CTA - Content pop-in
+      gsap.fromTo(
+        ".cta-content",
+        { scale: 0.9, opacity: 0, y: 30 },
+        {
+          scale: 1,
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: "back.out(1.2)",
+          scrollTrigger: {
+            trigger: ".cta-content",
+            start: "top 80%",
+            end: "center 60%",
+            scrub: 1,
+          },
+        }
       );
     },
     { scope: containerRef },

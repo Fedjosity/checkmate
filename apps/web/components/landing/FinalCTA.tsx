@@ -5,11 +5,11 @@ export const FinalCTA = () => {
   return (
     <section className="py-32 bg-[#0A0B0F] relative flex items-center justify-center overflow-hidden border-t border-border">
       <div className="absolute inset-0 flex justify-center items-center opacity-10 pointer-events-none">
-        <span className="material-symbols-outlined text-[400px] text-primary">
+        <span className="material-symbols-outlined text-[400px] text-primary cta-icon">
           chess_king
         </span>
       </div>
-      <div className="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center flex flex-col items-center">
+      <div className="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center flex flex-col items-center cta-content opacity-0">
         <h2 className="font-headline-xl text-[48px] md:text-[72px] text-white mb-6">
           Your Board Is Waiting.
         </h2>

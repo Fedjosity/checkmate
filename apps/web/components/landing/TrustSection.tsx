@@ -9,7 +9,7 @@ export const TrustSection = () => {
       <div className="absolute inset-0 bg-cover bg-center opacity-5 transform scale-110 perspective-1000"></div>
       <div className="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div>
+          <div className="trust-header">
             <h2 className="font-headline-xl text-[48px] md:text-[64px] text-white leading-tight mb-8">
               This Isn't Luck.
               <br />
@@ -19,8 +19,9 @@ export const TrustSection = () => {
               We built CheckMate for purists. No algorithms determining your
               fate. Just you, the board, and your skill.
             </p>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
+          </div>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4 trust-item opacity-0">
                 <span className="material-symbols-outlined text-primary mt-1">
                   shield_locked
                 </span>
@@ -60,7 +61,6 @@ export const TrustSection = () => {
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
     </section>

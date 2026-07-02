@@ -12,6 +12,8 @@ const envSchema = z.object({
   FLW_SECRET_KEY: z.string().optional(),
   FLW_WEBHOOK_SECRET: z.string().optional(),
   DIDIT_API_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_PROVIDER: z.string().default('resend'),
 });
 
 const _env = envSchema.safeParse(process.env);

@@ -34,14 +34,7 @@ router.post("/join", joinLimiter, validateRequest(joinWaitlistSchema), async (re
       );
 
       if (!existingQuery.empty) {
-        // Return existing document if they already signed up
-        const existingDoc = existingQuery.docs[0].data();
-        return {
-          isNew: false,
-          position: existingDoc.position,
-          email: existingDoc.email,
-          status: existingDoc.status,
-        };
+        return { exists: true };
       }
 
       // Calculate position
@@ -91,6 +84,10 @@ router.post("/join", joinLimiter, validateRequest(joinWaitlistSchema), async (re
         fullName: data.fullName,
       };
     });
+
+    if (result.exists) {
+      return res.status(409).json(error("This email is already registered on the waitlist."));
+    }
 
     if (result.isNew) {
       // Fire and forget — don't block the HTTP response

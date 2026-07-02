@@ -8,10 +8,10 @@ import { joinWaitlist } from "@/lib/api/waitlist";
 import { useRouter } from "next/navigation";
 import { CountrySelect, PhoneCodeSelect, COUNTRIES } from "@/components/ui/CountryDropdowns";
 import { AsYouType, CountryCode } from "libphonenumber-js";
+import { toast } from "sonner";
 
 export const SignupForm = () => {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -29,23 +29,18 @@ export const SignupForm = () => {
   });
 
   const onSubmit = async (data: JoinWaitlistDTO) => {
-    setError(null);
     try {
       const result = await joinWaitlist(data);
+      toast.success("Successfully joined the queue!");
       router.push(`/beta/confirmed?email=${encodeURIComponent(result.email)}&position=${result.position}`);
     } catch (err: any) {
       const apiMessage = err?.response?.data?.message;
-      setError(apiMessage || err?.message || "Something went wrong. Please try again.");
+      toast.error(apiMessage || err?.message || "Something went wrong. Please try again.");
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-6">
-      {error && (
-        <div className="bg-error/10 border border-error text-error px-4 py-3 rounded-sm font-body-md text-[14px]">
-          {error}
-        </div>
-      )}
       
       <div className="flex flex-col gap-4 md:flex-row">
         <div className="flex-1 flex flex-col gap-2">

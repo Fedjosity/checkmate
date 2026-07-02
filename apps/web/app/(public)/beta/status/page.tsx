@@ -4,11 +4,11 @@ import { useState } from "react";
 import { checkWaitlistStatus } from "@/lib/api/waitlist";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export default function BetaStatusPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [statusData, setStatusData] = useState<{
     position: number;
     peopleAhead: number;
@@ -21,7 +21,6 @@ export default function BetaStatusPage() {
     if (!email) return;
 
     setIsLoading(true);
-    setError(null);
     setStatusData(null);
 
     try {
@@ -29,9 +28,7 @@ export default function BetaStatusPage() {
       setStatusData(data);
     } catch (err: any) {
       const apiMessage = err?.response?.data?.message;
-      setError(
-        apiMessage || err?.message || "Email not found on the waitlist.",
-      );
+      toast.error(apiMessage || err?.message || "Email not found on the waitlist.");
     } finally {
       setIsLoading(false);
     }
@@ -62,14 +59,7 @@ export default function BetaStatusPage() {
         </div>
 
         {!statusData ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && (
-              <div className="bg-error/10 border border-error text-error px-4 py-3 rounded-sm font-body-md text-[14px]">
-                {error}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">            <div className="flex flex-col gap-2">
               <label className="font-label-caps text-text-primary">
                 Email Address
               </label>

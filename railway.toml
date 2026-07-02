@@ -1,0 +1,6 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install -g pnpm && pnpm install && pnpm build --filter @checkmate/api"
+
+[deploy]
+startCommand = "cd apps/api && npm run start"

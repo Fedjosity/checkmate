@@ -14,7 +14,7 @@ export default function BetaSignupPage() {
               width={500}
               height={150}
               className="h-24 w-auto"
-              src="/logo.png"
+              src="/logo2.png"
               alt="CheckMate Logo"
             />
           </div>

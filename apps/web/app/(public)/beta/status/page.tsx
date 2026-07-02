@@ -28,7 +28,9 @@ export default function BetaStatusPage() {
       setStatusData(data);
     } catch (err: any) {
       const apiMessage = err?.response?.data?.message;
-      toast.error(apiMessage || err?.message || "Email not found on the waitlist.");
+      toast.error(
+        apiMessage || err?.message || "Email not found on the waitlist.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -43,7 +45,7 @@ export default function BetaStatusPage() {
               width={500}
               height={150}
               className="h-24 w-auto"
-              src="/logo.png"
+              src="/logo2.png"
               alt="CheckMate Logo"
             />
           </div>
@@ -59,7 +61,9 @@ export default function BetaStatusPage() {
         </div>
 
         {!statusData ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">            <div className="flex flex-col gap-2">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {" "}
+            <div className="flex flex-col gap-2">
               <label className="font-label-caps text-text-primary">
                 Email Address
               </label>
@@ -72,7 +76,6 @@ export default function BetaStatusPage() {
                 placeholder="your@email.com"
               />
             </div>
-
             <button
               type="submit"
               disabled={isLoading}

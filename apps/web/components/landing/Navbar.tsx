@@ -5,17 +5,15 @@ import Image from "next/image";
 export const Navbar = () => {
   return (
     <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-none bg-[#0A0B0F]/90 backdrop-blur-md">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <Image
           alt="CheckMate Logo"
-          width={120}
-          height={32}
-          className="h-8 w-auto"
-          src="/logo.png"
+          width={500}
+          height={150}
+          className="h-10 md:h-12 w-auto scale-[2.5] origin-left"
+          src="/logo2.png"
+          priority
         />
-        <span className="text-headline-md font-headline-md font-bold text-primary">
-          CheckMate
-        </span>
       </div>
       <Link
         href="/beta"

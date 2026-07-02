@@ -5,19 +5,16 @@ export const Footer = () => {
   return (
     <footer className="w-full px-margin-mobile md:px-margin-desktop md:py-section-gap py-10 grid grid-cols-1 md:grid-cols-4 gap-gutter bg-surface border-t border-primary/30">
       <div className="col-span-1 md:col-span-4 mb-8">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-6">
           <Image
             alt="CheckMate Logo"
-            width={100}
-            height={24}
-            className="h-12 w-auto"
-            src="/logo.png"
+            width={500}
+            height={150}
+            className="h-12 md:h-16 w-auto scale-[2.5] origin-left"
+            src="/logo2.png"
           />
-          <span className="text-headline-md font-headline-md font-bold text-primary">
-            CheckMate
-          </span>
         </div>
-        <p className="text-on-surface-variant font-body-md text-sm">
+        <p className="text-on-surface-variant font-body-md text-sm ml-2">
           © {new Date().getFullYear()} MishRone Entertainment. Competitive chess
           platform for serious enthusiasts.
         </p>

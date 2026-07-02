@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LiveCounter } from "@/components/waitlist/LiveCounter";
 import { SignupForm } from "@/components/waitlist/SignupForm";
+import Image from "next/image";
 
 export default function BetaSignupPage() {
   return (
@@ -8,13 +9,14 @@ export default function BetaSignupPage() {
       <div className="bg-surface luxury-glow border border-border rounded-lg p-8 md:p-10 relative overflow-hidden backdrop-blur-sm">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <span
-              className="material-symbols-outlined text-primary text-4xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              chess
-            </span>
+          <div className="flex justify-center">
+            <Image
+              width={500}
+              height={150}
+              className="h-24 w-auto"
+              src="/logo.png"
+              alt="CheckMate Logo"
+            />
           </div>
           <div className="font-label-caps text-[12px] text-primary uppercase mb-2">
             Exclusive Beta Access
@@ -23,7 +25,8 @@ export default function BetaSignupPage() {
             Claim Your Seat at the Board
           </h1>
           <p className="text-text-muted font-body-md">
-            Join the elite ranks and experience the future of professional chess.
+            Join the elite ranks and experience the future of professional
+            chess.
           </p>
         </div>
 

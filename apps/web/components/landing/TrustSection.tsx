@@ -3,7 +3,7 @@ import React from "react";
 export const TrustSection = () => {
   return (
     <section
-      className="py-section-gap bg-surface relative overflow-hidden angled-divider pt-32 pb-32"
+      className="py-section-gap bg-surface relative overflow-hidden pt-32 pb-32"
       id="trust"
     >
       <div className="absolute inset-0 bg-cover bg-center opacity-5 transform scale-110 perspective-1000"></div>
@@ -34,7 +34,7 @@ export const TrustSection = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 trust-item opacity-0">
                 <span className="material-symbols-outlined text-primary mt-1">
                   account_balance
                 </span>
@@ -47,7 +47,7 @@ export const TrustSection = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 trust-item opacity-0">
                 <span className="material-symbols-outlined text-primary mt-1">
                   group
                 </span>

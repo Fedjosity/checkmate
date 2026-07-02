@@ -10,7 +10,7 @@ export const Footer = () => {
             alt="CheckMate Logo"
             width={100}
             height={24}
-            className="h-6 w-auto grayscale opacity-50"
+            className="h-12 w-auto"
             src="/logo.png"
           />
           <span className="text-headline-md font-headline-md font-bold text-primary">
@@ -18,8 +18,8 @@ export const Footer = () => {
           </span>
         </div>
         <p className="text-on-surface-variant font-body-md text-sm">
-          © {new Date().getFullYear()} CheckMate. Competitive chess platform for
-          serious enthusiasts.
+          © {new Date().getFullYear()} MishRone Entertainment. Competitive chess
+          platform for serious enthusiasts.
         </p>
       </div>
     </footer>

@@ -56,25 +56,26 @@ export default function LandingPage() {
         });
       });
 
-      // 5. How It Works - Cards 3D flip up
-      gsap.fromTo(
-        ".how-card",
-        { y: 60, opacity: 0, rotationX: -15 },
-        {
-          y: 0,
-          opacity: 1,
-          rotationX: 0,
-          stagger: 0.2,
-          duration: 1,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: "#how-it-works",
-            start: "top 75%",
-            end: "center 60%",
-            scrub: 1,
-          },
-        }
-      );
+      // 5. How It Works - Cards sequential scale-in bounce
+      gsap.utils.toArray(".how-card").forEach((card: any) => {
+        gsap.fromTo(
+          card,
+          { scale: 0.8, opacity: 0, y: 50 },
+          {
+            scale: 1,
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: "back.out(1.5)",
+            scrollTrigger: {
+              trigger: card,
+              start: "top 85%",
+              end: "top 50%",
+              scrub: 1,
+            },
+          }
+        );
+      });
 
       // 6. How It Works - Connecting Line Draw
       gsap.to(".how-line", {
@@ -89,24 +90,42 @@ export default function LandingPage() {
         },
       });
 
-      // 7. Trust Section - Header and Items staggered fade-in left
+      // 7. Trust Section - Header and Items individual fade-in left
       gsap.fromTo(
-        [".trust-header", ".trust-item"],
+        ".trust-header",
         { x: -40, opacity: 0 },
         {
           x: 0,
           opacity: 1,
-          stagger: 0.15,
           duration: 1,
           ease: "power2.out",
           scrollTrigger: {
-            trigger: "#trust",
-            start: "top 75%",
-            end: "center 50%",
+            trigger: ".trust-header",
+            start: "top 80%",
+            end: "top 50%",
             scrub: 1,
           },
         }
       );
+
+      gsap.utils.toArray(".trust-item").forEach((item: any) => {
+        gsap.fromTo(
+          item,
+          { x: -40, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: item,
+              start: "top 90%",
+              end: "top 70%",
+              scrub: 1,
+            },
+          }
+        );
+      });
 
       // 8. Final CTA - Massive King slow rotation on scrub
       gsap.to(".cta-icon", {

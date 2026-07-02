@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center pt-24 overflow-hidden bg-grid-pattern angled-divider pb-24">
+    <section className="relative min-h-screen flex items-center pt-24 overflow-hidden bg-grid-pattern pb-24 border-b border-border">
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none"></div>
       <div className="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">

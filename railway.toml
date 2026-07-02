@@ -2,4 +2,4 @@
 buildCommand = "pnpm build --filter @checkmate/api"
 
 [deploy]
-startCommand = "cd apps/api && npm run start"
+startCommand = "pnpm --filter @checkmate/api start"

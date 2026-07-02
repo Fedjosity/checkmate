@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: checkmate-api
+    env: node
+    buildCommand: npm install -g pnpm && pnpm install && pnpm build --filter @checkmate/api
+    startCommand: cd apps/api && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

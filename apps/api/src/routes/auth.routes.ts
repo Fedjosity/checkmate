@@ -106,7 +106,8 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
 // ─── GET /auth/me ───────────────────────────────────────────
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
   try {
-    const uid = (req as any).user.uid;
+    const firebaseUser = (req as any).user;
+    const uid = firebaseUser.uid;
     const doc = await db.collection('users').doc(uid).get();
 
     if (!doc.exists) {
@@ -114,7 +115,15 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    res.json(success({ user: { uid, ...doc.data() } }));
+    const userData = doc.data() as any;
+
+    // Sync emailVerified if Firebase says it's verified but DB says false
+    if (firebaseUser.email_verified && !userData.emailVerified) {
+      await db.collection('users').doc(uid).update({ emailVerified: true });
+      userData.emailVerified = true;
+    }
+
+    res.json(success({ user: { uid, ...userData } }));
   } catch (err: any) {
     logger.error('GetMe error', { error: err.message });
     res.status(500).json(error('Failed to fetch user'));

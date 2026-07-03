@@ -23,6 +23,7 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
       if (auth.currentUser) {
         await auth.currentUser.reload();
         if (auth.currentUser.emailVerified) {
+          await auth.currentUser.getIdToken(true);
           setEmailVerified(true);
           toast.success("Email verified successfully!");
           onSuccess();

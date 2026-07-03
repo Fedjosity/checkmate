@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { verifyEmailOTP, resendVerificationEmail } from "@/lib/api/auth";
-import { OTPInput } from "@/components/ui/OTPInput";
+import { OTPInput } from "@/components/utils/OTPInput";
 import { Card } from "@/components/ui/Card";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import { toast } from "sonner";
@@ -44,22 +44,21 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
 
     try {
       await verifyEmailOTP(submitCode);
-      
+
       // Success flow
       setIsSuccess(true);
       setEmailVerified(true);
-      
+
       // Briefly show success state before advancing
       setTimeout(() => {
         onSuccess();
       }, 800);
-      
     } catch (err: any) {
       // Error flow
       setIsError(true);
       setErrorMessage(err?.message || "Verification failed");
       setCode("");
-      
+
       // Remove shake animation class after it completes so it can trigger again
       setTimeout(() => setIsError(false), 500);
     } finally {
@@ -69,7 +68,7 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
 
   const handleResend = async () => {
     if (countdown > 0) return;
-    
+
     try {
       await resendVerificationEmail();
       setCountdown(60);
@@ -81,8 +80,13 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
   };
 
   return (
-    <div className={`transition-transform duration-300 ${isError ? "animate-shake" : ""}`}>
-      <Card padding="lg" className="luxury-glow text-center max-w-md mx-auto w-full">
+    <div
+      className={`transition-transform duration-300 ${isError ? "animate-shake" : ""}`}
+    >
+      <Card
+        padding="lg"
+        className="luxury-glow text-center max-w-md mx-auto w-full"
+      >
         <div className="w-16 h-16 rounded-full bg-surface-bright border border-gold/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(201,168,76,0.15)]">
           <MailOutlineIcon fontSize="large" className="text-gold" />
         </div>
@@ -91,7 +95,8 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
           Verify your email
         </h2>
         <p className="text-on-surface-variant text-sm mb-8 px-4">
-          We sent a 6-digit code to <strong className="text-white font-medium">{user?.email}</strong>.
+          We sent a 6-digit code to{" "}
+          <strong className="text-white font-medium">{user?.email}</strong>.
           Enter it below to verify your account.
         </p>
 
@@ -115,9 +120,7 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
 
         <div className="text-sm">
           {countdown > 0 ? (
-            <p className="text-muted">
-              Resend available in {countdown}s
-            </p>
+            <p className="text-muted">Resend available in {countdown}s</p>
           ) : (
             <button
               onClick={handleResend}

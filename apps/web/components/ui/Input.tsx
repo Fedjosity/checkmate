@@ -31,10 +31,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             type={currentType}
             className={cn(
-              "flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-gold focus:border-gold disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+              "flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:bg-primary/5 focus:shadow-[0_0_15px_rgba(230,195,100,0.15)] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300",
               icon && "pl-10",
               isPassword && "pr-10",
-              error && "border-error focus:ring-error focus:border-error",
+              error && "border-error focus:ring-error focus:border-error focus:bg-error/5 focus:shadow-[0_0_15px_rgba(255,180,171,0.15)]",
               className
             )}
             ref={ref}

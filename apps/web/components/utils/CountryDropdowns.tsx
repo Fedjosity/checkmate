@@ -37,10 +37,13 @@ export const CountrySelect = forwardRef<HTMLSelectElement, React.SelectHTMLAttri
       <select
         ref={ref}
         {...props}
-        className={`w-full bg-surface border border-border px-4 py-3 text-text-primary rounded-sm focus:outline-none focus:border-primary transition-colors appearance-none ${props.className || ''}`}
+        className={`w-full h-10 bg-surface border border-border px-3 py-2 text-sm text-white rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:bg-primary/5 focus:shadow-[0_0_15px_rgba(230,195,100,0.15)] transition-all duration-300 appearance-none ${props.className || ''}`}
       >
+        <option value="" disabled className="bg-surface text-muted">
+          Select your country
+        </option>
         {COUNTRIES.map((country) => (
-          <option key={country.iso} value={country.name}>
+          <option key={country.iso} value={country.name} className="bg-surface text-white">
             {country.name}
           </option>
         ))}

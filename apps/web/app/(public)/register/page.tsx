@@ -8,7 +8,7 @@ import { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-import { signUpWithEmail, signInWithGoogle } from "@/lib/firebase/auth";
+import { signUpWithEmail, signInWithGoogle, sendVerificationEmail } from "@/lib/firebase/auth";
 import { getMe, registerUser } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
@@ -111,13 +111,17 @@ export default function RegisterPage() {
         email: data.email,
         country: data.country,
       });
+      // Send Firebase native verification email
+      await sendVerificationEmail();
+
       const response: any = await getMe();
       setUser(response.data.user);
       router.replace("/onboarding");
     } catch (err: any) {
       const code = err?.code || "";
       const message =
-        firebaseErrorMap[code] || "Registration failed. Try again.";
+        firebaseErrorMap[code] || err?.message || "Registration failed. Try again.";
+      console.error("Registration Error: ", err);
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -164,7 +168,7 @@ export default function RegisterPage() {
       {/* Left Panel */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="/hero.png"
+          src="/auth.jpg"
           alt="CheckMate Arena"
           fill
           priority
@@ -175,13 +179,14 @@ export default function RegisterPage() {
       {/* Right Panel — Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex justify-center mb-8">
+          {/* Logo */}
+          <div className="flex justify-start">
             <Image
               src="/logo2.png"
               alt="CheckMate"
-              width={200}
-              height={60}
-              className="h-12 w-auto"
+              width={300}
+              height={90}
+              className="h-24 w-auto"
             />
           </div>
 
@@ -222,10 +227,10 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-white">Country</label>
-              <CountrySelect
-                {...register("country")}
-              />
+              <label className="block text-sm font-medium text-white">
+                Country
+              </label>
+              <CountrySelect {...register("country")} />
               {errors.country && (
                 <p className="text-sm text-error">{errors.country.message}</p>
               )}
@@ -258,7 +263,9 @@ export default function RegisterPage() {
                 }
               />
               {errors.terms && (
-                <p className="text-sm text-error mt-1">{errors.terms.message}</p>
+                <p className="text-sm text-error mt-1">
+                  {errors.terms.message}
+                </p>
               )}
             </div>
 
@@ -297,7 +304,7 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-gold hover:text-primary font-semibold transition-colors"
+              className="text-gold text-primary hover:text-primary-fixed font-semibold transition-colors"
             >
               Sign in
             </Link>

@@ -21,12 +21,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const variants = {
-      primary: "bg-gold text-background hover:bg-gold-dim border border-transparent",
-      secondary: "bg-transparent border border-gold text-gold hover:bg-gold/10",
-      ghost: "bg-transparent text-muted hover:text-white hover:bg-white/5 border border-transparent",
+      primary:
+        "bg-primary text-on-primary font-bold border border-transparent shadow-[0_0_10px_rgba(230,195,100,0.1)]  hover:shadow-[0_0_20px_rgba(230,195,100,0.4)] active:bg-primary-fixed active:scale-[0.98] transition-all duration-300",
+      secondary:
+        "bg-transparent border border-border text-on-surface-variant hover:border-primary hover:text-primary hover:shadow-[0_0_15px_rgba(230,195,100,0.2)] active:border-primary active:text-primary active:shadow-[0_0_20px_rgba(230,195,100,0.4)] transition-all duration-300 group",
+      ghost:
+        "bg-transparent text-muted hover:text-white hover:bg-white/5 border border-transparent transition-all duration-300",
     };
 
     const sizes = {
@@ -44,7 +47,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           variants[variant],
           sizes[size],
           fullWidth && "w-full",
-          className
+          className,
         )}
         {...props}
       >
@@ -52,6 +55,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </button>
     );
-  }
+  },
 );
 Button.displayName = "Button";

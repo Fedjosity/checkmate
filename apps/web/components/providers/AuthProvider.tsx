@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Spinner size="lg" />
+        <Spinner size="lg" className="text-primary" />
       </div>
     );
   }

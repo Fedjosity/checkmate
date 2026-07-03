@@ -109,39 +109,27 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex bg-background">
-      {/* Left Panel — Hidden on mobile */}
-      <div className="hidden lg:flex lg:w-1/2 bg-surface relative items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.04]" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[180px] text-gold/20 select-none leading-none">
-            ♛
-          </span>
-        </div>
-        <div className="relative z-10 text-center">
-          <Image
-            src="/logo2.png"
-            alt="CheckMate"
-            width={300}
-            height={90}
-            className="h-16 w-auto mx-auto"
-          />
-          <p className="text-on-surface-variant mt-4 font-body-md text-sm">
-            The arena for serious chess competitors.
-          </p>
-        </div>
+      {/* Left Panel */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/auth.jpg"
+          alt="CheckMate Arena"
+          fill
+          priority
+          className="object-cover"
+        />
       </div>
-
       {/* Right Panel — Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex justify-center mb-8">
+          {/* Logo */}
+          <div className="flex justify-start">
             <Image
               src="/logo2.png"
               alt="CheckMate"
-              width={200}
-              height={60}
-              className="h-12 w-auto"
+              width={300}
+              height={90}
+              className="h-24 w-auto"
             />
           </div>
 
@@ -174,7 +162,7 @@ export default function LoginPage() {
             <div className="flex justify-end">
               <Link
                 href="/forgot-password"
-                className="text-sm text-gold hover:text-primary transition-colors"
+                className="text-sm text-primary hover:text-primary-fixed transition-colors"
               >
                 Forgot password?
               </Link>
@@ -218,7 +206,7 @@ export default function LoginPage() {
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="text-gold hover:text-primary font-semibold transition-colors"
+              className="text-primary hover:text-primary-fixed font-semibold transition-colors"
             >
               Create one
             </Link>

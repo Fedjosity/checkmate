@@ -13,17 +13,9 @@ import { getMe, registerUser } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { CountrySelect } from "@/components/utils/CountryDropdowns";
 import GoogleIcon from "@mui/icons-material/Google";
-
-const COUNTRY_OPTIONS = [
-  { value: "Nigeria", label: "Nigeria" },
-  { value: "Ghana", label: "Ghana" },
-  { value: "Kenya", label: "Kenya" },
-  { value: "South Africa", label: "South Africa" },
-  { value: "United Kingdom", label: "United Kingdom" },
-  { value: "Other", label: "Other" },
-];
 
 const registerSchema = z.object({
   displayName: z
@@ -57,7 +49,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
   }, [password]);
 
   const labels = ["", "Weak", "Fair", "Good", "Strong"];
-  const colors = ["", "bg-error", "bg-amber-500", "bg-gold", "bg-success"];
+  const colors = ["", "bg-error", "bg-secondary", "bg-primary", "bg-success"];
 
   return (
     <div className="mt-2">
@@ -66,7 +58,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
           <div
             key={level}
             className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              level <= strength ? colors[strength] : "bg-border"
+              level <= strength ? colors[strength] : "bg-surface-bright"
             }`}
           />
         ))}
@@ -77,9 +69,9 @@ function PasswordStrengthBar({ password }: { password: string }) {
             strength <= 1
               ? "text-error"
               : strength === 2
-                ? "text-amber-500"
+                ? "text-secondary"
                 : strength === 3
-                  ? "text-gold"
+                  ? "text-primary"
                   : "text-success"
           }`}
         >
@@ -170,25 +162,14 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen flex bg-background">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-surface relative items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.04]" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[180px] text-gold/20 select-none leading-none">
-            ♛
-          </span>
-        </div>
-        <div className="relative z-10 text-center">
-          <Image
-            src="/logo2.png"
-            alt="CheckMate"
-            width={300}
-            height={90}
-            className="h-16 w-auto mx-auto"
-          />
-          <p className="text-on-surface-variant mt-4 font-body-md text-sm">
-            Join the arena. Compete at the highest level.
-          </p>
-        </div>
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/hero.png"
+          alt="CheckMate Arena"
+          fill
+          priority
+          className="object-cover"
+        />
       </div>
 
       {/* Right Panel — Form */}
@@ -240,47 +221,46 @@ export default function RegisterPage() {
               <PasswordStrengthBar password={password} />
             </div>
 
-            <Select
-              label="Country"
-              placeholder="Select your country"
-              options={COUNTRY_OPTIONS}
-              error={errors.country?.message}
-              {...register("country")}
-            />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-white">Country</label>
+              <CountrySelect
+                {...register("country")}
+              />
+              {errors.country && (
+                <p className="text-sm text-error">{errors.country.message}</p>
+              )}
+            </div>
 
             {/* Terms Checkbox */}
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
+            <div>
+              <Checkbox
                 id="terms"
                 {...register("terms")}
-                className="mt-1 h-4 w-4 rounded border-border bg-surface text-gold focus:ring-gold focus:ring-1 accent-gold cursor-pointer"
+                label={
+                  <>
+                    I am 18 or older and agree to the{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      className="text-primary hover:text-primary-fixed transition-colors"
+                    >
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      className="text-primary hover:text-primary-fixed transition-colors"
+                    >
+                      Privacy Policy
+                    </a>
+                  </>
+                }
               />
-              <label
-                htmlFor="terms"
-                className="text-sm text-on-surface-variant cursor-pointer"
-              >
-                I am 18 or older and agree to the{" "}
-                <a
-                  href="/terms"
-                  target="_blank"
-                  className="text-gold hover:text-primary transition-colors"
-                >
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a
-                  href="/privacy"
-                  target="_blank"
-                  className="text-gold hover:text-primary transition-colors"
-                >
-                  Privacy Policy
-                </a>
-              </label>
+              {errors.terms && (
+                <p className="text-sm text-error mt-1">{errors.terms.message}</p>
+              )}
             </div>
-            {errors.terms && (
-              <p className="text-sm text-error -mt-2">{errors.terms.message}</p>
-            )}
 
             <Button
               type="submit"

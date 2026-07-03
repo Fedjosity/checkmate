@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { resetPassword } from "@/lib/firebase/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -23,7 +24,6 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -35,7 +35,6 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotForm) => {
     setIsLoading(true);
-    setFormError(null);
     try {
       await resetPassword(data.email);
       setSentEmail(data.email);
@@ -43,9 +42,9 @@ export default function ForgotPasswordPage() {
     } catch (err: any) {
       const code = err?.code || "";
       if (code === "auth/user-not-found") {
-        setFormError("No account found with this email.");
+        toast.error("No account found with this email.");
       } else {
-        setFormError("Something went wrong. Please try again.");
+        toast.error("Something went wrong. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -84,12 +83,6 @@ export default function ForgotPasswordPage() {
                   error={errors.email?.message}
                   {...register("email")}
                 />
-
-                {formError && (
-                  <div className="bg-error/10 border border-error/30 rounded-md px-4 py-3 text-sm text-error">
-                    {formError}
-                  </div>
-                )}
 
                 <Button
                   type="submit"

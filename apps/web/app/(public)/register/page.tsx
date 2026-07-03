@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 import { signUpWithEmail, signInWithGoogle } from "@/lib/firebase/auth";
 import { getMe, registerUser } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/auth.store";
@@ -94,7 +95,6 @@ export default function RegisterPage() {
   const { setUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -112,7 +112,6 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
-    setFormError(null);
     try {
       await signUpWithEmail(data.email, data.password);
       await registerUser({
@@ -127,7 +126,7 @@ export default function RegisterPage() {
       const code = err?.code || "";
       const message =
         firebaseErrorMap[code] || "Registration failed. Try again.";
-      setFormError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +134,6 @@ export default function RegisterPage() {
 
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true);
-    setFormError(null);
     try {
       const result = await signInWithGoogle();
       const firebaseUser = result.user;
@@ -163,7 +161,7 @@ export default function RegisterPage() {
         err?.code === "auth/popup-closed-by-user"
           ? "Sign up cancelled."
           : "Google sign up failed. Please try again.";
-      setFormError(message);
+      toast.error(message);
     } finally {
       setIsGoogleLoading(false);
     }
@@ -282,12 +280,6 @@ export default function RegisterPage() {
             </div>
             {errors.terms && (
               <p className="text-sm text-error -mt-2">{errors.terms.message}</p>
-            )}
-
-            {formError && (
-              <div className="bg-error/10 border border-error/30 rounded-md px-4 py-3 text-sm text-error">
-                {formError}
-              </div>
             )}
 
             <Button

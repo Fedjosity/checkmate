@@ -35,7 +35,6 @@ export default function LoginPage() {
   const { setUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -60,7 +59,6 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
-    setFormError(null);
     try {
       await signInWithEmail(data.email, data.password);
       const response: any = await getMe();
@@ -71,7 +69,7 @@ export default function LoginPage() {
       const code = err?.code || "";
       const message =
         firebaseErrorMap[code] || "Sign in failed. Please try again.";
-      setFormError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +77,6 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    setFormError(null);
     try {
       const result = await signInWithGoogle();
       const firebaseUser = result.user;
@@ -104,7 +101,7 @@ export default function LoginPage() {
         err?.code === "auth/popup-closed-by-user"
           ? "Sign in cancelled."
           : "Google sign in failed. Please try again.";
-      setFormError(message);
+      toast.error(message);
     } finally {
       setIsGoogleLoading(false);
     }
@@ -182,13 +179,6 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
-
-            {/* Inline error box */}
-            {formError && (
-              <div className="bg-error/10 border border-error/30 rounded-md px-4 py-3 text-sm text-error">
-                {formError}
-              </div>
-            )}
 
             <Button
               type="submit"

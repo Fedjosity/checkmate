@@ -16,3 +16,6 @@
 
 ## Documentation
 - Continuously update this `.agents/AGENTS.md` file whenever new architectural or design decisions are made to ensure future contexts align with the project's standards.
+
+## State & Feedback
+- **Toasts as Source of Truth**: The custom toast component (`apps/web/components/utils/Toaster.tsx`) is the single source of truth and the default mechanism for displaying any success, error, or informational messages to the user across the application. Use it for all feedback variants.

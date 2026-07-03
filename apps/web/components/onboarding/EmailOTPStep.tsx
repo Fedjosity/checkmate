@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { verifyEmailOTP, resendVerificationEmail } from "@/lib/api/auth";
-import { OTPInput } from "@/components/utils/OTPInput";
+import { sendVerificationEmail } from "@/lib/firebase/auth";
+import { auth } from "@/lib/firebase/config";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import { toast } from "sonner";
 
@@ -14,79 +15,40 @@ interface EmailOTPStepProps {
 
 export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
   const { user, setEmailVerified } = useAuth();
-  const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [countdown, setCountdown] = useState(60);
 
-  // Handle countdown timer for resend
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [countdown]);
-
-  // Auto-submit when 6 digits are entered
-  useEffect(() => {
-    if (code.length === 6 && !isLoading && !isSuccess) {
-      handleSubmit(code);
-    }
-  }, [code]);
-
-  const handleSubmit = async (submitCode: string) => {
+  const handleCheckVerification = async () => {
     setIsLoading(true);
-    setIsError(false);
-    setErrorMessage("");
-
     try {
-      await verifyEmailOTP(submitCode);
-
-      // Success flow
-      setIsSuccess(true);
-      setEmailVerified(true);
-
-      // Briefly show success state before advancing
-      setTimeout(() => {
-        onSuccess();
-      }, 800);
+      if (auth.currentUser) {
+        await auth.currentUser.reload();
+        if (auth.currentUser.emailVerified) {
+          setEmailVerified(true);
+          toast.success("Email verified successfully!");
+          onSuccess();
+        } else {
+          toast.error("Email not verified yet. Please check your inbox.");
+        }
+      }
     } catch (err: any) {
-      // Error flow
-      setIsError(true);
-      setErrorMessage(err?.message || "Verification failed");
-      setCode("");
-
-      // Remove shake animation class after it completes so it can trigger again
-      setTimeout(() => setIsError(false), 500);
+      toast.error(err?.message || "Failed to check verification status");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (countdown > 0) return;
-
     try {
-      await resendVerificationEmail();
-      setCountdown(60);
-      setCode("");
-      toast.success("New code sent to your email");
+      await sendVerificationEmail();
+      toast.success("Verification link resent to your email");
     } catch (err: any) {
-      toast.error(err?.message || "Failed to resend code");
+      toast.error(err?.message || "Failed to resend link");
     }
   };
 
   return (
-    <div
-      className={`transition-transform duration-300 ${isError ? "animate-shake" : ""}`}
-    >
-      <Card
-        padding="lg"
-        className="luxury-glow text-center max-w-md mx-auto w-full"
-      >
+    <div className="transition-transform duration-300">
+      <Card padding="lg" className="luxury-glow text-center max-w-md mx-auto w-full">
         <div className="w-16 h-16 rounded-full bg-surface-bright border border-gold/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(201,168,76,0.15)]">
           <MailOutlineIcon fontSize="large" className="text-gold" />
         </div>
@@ -95,40 +57,28 @@ export function EmailOTPStep({ onSuccess }: EmailOTPStepProps) {
           Verify your email
         </h2>
         <p className="text-on-surface-variant text-sm mb-8 px-4">
-          We sent a 6-digit code to{" "}
-          <strong className="text-white font-medium">{user?.email}</strong>.
-          Enter it below to verify your account.
+          We sent a verification link to <strong className="text-white font-medium">{user?.email}</strong>.
+          Please click the link in that email, then click the button below.
         </p>
 
-        <div className="mb-6">
-          <OTPInput
-            length={6}
-            value={code}
-            onChange={setCode}
-            disabled={isLoading || isSuccess}
-            loading={isLoading}
-            error={isError}
-            success={isSuccess}
-          />
-        </div>
-
-        <div className="min-h-[24px] mb-8">
-          {errorMessage && (
-            <p className="text-sm text-error font-medium">{errorMessage}</p>
-          )}
-        </div>
-
-        <div className="text-sm">
-          {countdown > 0 ? (
-            <p className="text-muted">Resend available in {countdown}s</p>
-          ) : (
-            <button
-              onClick={handleResend}
-              className="text-gold hover:text-primary font-semibold transition-colors focus:outline-none"
-            >
-              Resend code
-            </button>
-          )}
+        <div className="mb-6 space-y-4">
+          <Button 
+            fullWidth 
+            onClick={handleCheckVerification} 
+            isLoading={isLoading}
+            className="font-label-caps"
+          >
+            I have verified my email
+          </Button>
+          
+          <Button 
+            variant="secondary"
+            fullWidth 
+            onClick={handleResend} 
+            className="font-label-caps"
+          >
+            Resend Link
+          </Button>
         </div>
       </Card>
     </div>

@@ -69,6 +69,8 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
     await db.collection('users').doc(uid).set(userData);
 
     // If email is NOT verified (email/password sign-up), generate and send OTP
+    // [DISABLED] - Using native Firebase mail verification for now
+    /*
     if (!isEmailVerified) {
       const code = generateOTP();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -92,6 +94,7 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
 
       logger.info(`Verification email sent to ${email}`);
     }
+    */
 
     res.status(201).json(success({ user: { uid, ...userData } }, 'User registered'));
   } catch (err: any) {
@@ -209,6 +212,8 @@ router.post('/resend-verification', requireAuth, async (req: Request, res: Respo
       }
     }
 
+    // [DISABLED] - Using native Firebase mail verification for now
+    /*
     // Generate new OTP
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -231,6 +236,8 @@ router.post('/resend-verification', requireAuth, async (req: Request, res: Respo
 
     logger.info(`Resent verification email to ${userData.email}`);
     res.json(success(null, 'New verification code sent'));
+    */
+    res.status(400).json(error('Custom verification is temporarily disabled. Use Firebase native link.'));
   } catch (err: any) {
     logger.error('ResendVerification error', { error: err.message });
     res.status(500).json(error('Failed to resend code. Please try again.'));

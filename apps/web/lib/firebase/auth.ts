@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  sendEmailVerification,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from './config';
@@ -25,6 +26,13 @@ export const signOut = () => fbSignOut(auth);
 
 export const resetPassword = (email: string) =>
   sendPasswordResetEmail(auth, email);
+
+export const sendVerificationEmail = () => {
+  if (auth.currentUser) {
+    return sendEmailVerification(auth.currentUser);
+  }
+  return Promise.reject(new Error("No user signed in"));
+};
 
 export const getFirebaseToken = async (): Promise<string | null> => {
   const user = auth.currentUser;

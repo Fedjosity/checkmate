@@ -17,7 +17,7 @@ export function AppNavbar() {
     try {
       await signOut();
       clear();
-      router.push("/login");
+      router.push("/");
     } catch (err) {
       console.error("Sign out error", err);
     }

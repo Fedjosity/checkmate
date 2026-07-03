@@ -1,26 +1,38 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Button } from "@/components/ui/Button";
 
 export const Navbar = () => {
   return (
-    <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-none bg-[#0A0B0F]/90 backdrop-blur-md">
+    <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop  max-w-none bg-background/90 backdrop-blur-md border-b border-white/5">
       <div className="flex items-center">
-        <Image
-          alt="CheckMate Logo"
-          width={500}
-          height={150}
-          className="h-10 md:h-12 w-auto scale-[2.5] origin-left"
-          src="/logo2.png"
-          priority
-        />
+        <Link href="/">
+          <Image
+            alt="CheckMate Logo"
+            width={300}
+            height={90}
+            className="h-16 md:h-20 w-auto"
+            src="/logo2.png"
+            priority
+          />
+        </Link>
       </div>
-      <Link
-        href="/beta"
-        className="btn-primary px-6 py-3 font-label-caps text-label-caps rounded-sm  text-center"
-      >
-        Join Beta
-      </Link>
+      <div className="flex items-center gap-2 md:gap-4">
+        <Link href="/login" className="hidden sm:block">
+          <Button
+            variant="secondary"
+            className="font-label-caps text-label-caps uppercase"
+          >
+            Sign In
+          </Button>
+        </Link>
+        <Link href="/register">
+          <Button variant="primary" className="font-label-caps text-label-caps">
+            Create Account
+          </Button>
+        </Link>
+      </div>
     </nav>
   );
 };

@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 export const HeroSection = () => {
   return (
@@ -20,9 +19,9 @@ export const HeroSection = () => {
               <span className="text-primary block">Your Money.</span>
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-lg mt-4">
-              The arena for serious chess competitors. Stake your skill, play
-              at the highest level, and dominate the board in a premium
-              cinematic environment.
+              The arena for serious chess competitors. Stake your skill, play at
+              the highest level, and dominate the board in a premium cinematic
+              environment.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
               <Link
@@ -32,16 +31,6 @@ export const HeroSection = () => {
                 Claim Your Spot
               </Link>
             </div>
-          </div>
-          <div className="md:col-span-5 relative mt-12 md:mt-0 h-[500px] md:h-[700px] hidden md:flex items-center justify-end hero-content">
-            <Image
-              alt="A dramatic close-up of a premium, battle-worn golden chess king piece, emerging from deep shadows. High contrast, cinematic lighting with a luxury horology feel."
-              className="object-cover object-left mask-image-linear-gradient"
-              src="/hero.png"
-              fill
-              priority
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
           </div>
         </div>
       </div>

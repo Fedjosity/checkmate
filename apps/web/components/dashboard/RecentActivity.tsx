@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/Card";
 
 // Future: import type { GameHistorySummary } from '@checkmate/shared-types';
 interface GameHistorySummary {
@@ -17,29 +18,34 @@ export function RecentActivity({ games, isLoading }: Props) {
   const isEmpty = !isLoading && (!games || games.length === 0);
 
   return (
-    <section>
-      <h2 className="text-sm font-semibold text-[#6B7280] uppercase tracking-widest mb-4">
-        Recent Games
-      </h2>
+    <Card variant="hud" padding="md">
+      <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-4">
+        <h2 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-gold/50" />
+          Recent Games
+        </h2>
+      </div>
 
       {isEmpty && (
-        <div className="bg-surface border border-border rounded-2xl p-8 flex flex-col items-center gap-3 text-center">
-          <span className="text-6xl text-gold opacity-40 select-none leading-none">♟</span>
-          <h3 className="text-white font-semibold text-lg">No games yet</h3>
-          <p className="text-[#6B7280] text-sm max-w-xs">
+        <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+          <span className="text-5xl text-gold/30 select-none leading-none mb-4">♟</span>
+          <h3 className="text-white font-bold mb-1">No games yet</h3>
+          <p className="text-[#6B7280] text-sm max-w-sm mb-6">
             Your match history will appear here once you play your first game.
-            Pick a time control above and find your first match.
           </p>
           <button
             onClick={() => router.push("/play")}
-            className="mt-2 border border-gold text-gold hover:bg-gold hover:text-background transition-all duration-200 font-label-caps uppercase tracking-widest text-xs py-2.5 px-6 rounded-sm"
+            className="text-gold text-sm font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1 group"
           >
-            Play Your First Match
+            Play Now 
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
           </button>
         </div>
       )}
 
       {/* Game cards go here once Flow 6 ships */}
-    </section>
+    </Card>
   );
 }
+
+

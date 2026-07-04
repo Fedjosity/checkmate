@@ -49,7 +49,7 @@ export function AppSidebar() {
       {/* Sidebar Content */}
       <aside
         className={cn(
-          "fixed top-16 bottom-0 left-0 w-[240px] bg-surface border-r border-border z-40 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
+          "fixed top-16 bottom-0 left-0 w-[240px] bg-surface/90 backdrop-blur-xl border-r border-border/50 z-40 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -64,14 +64,14 @@ export function AppSidebar() {
                 href={item.href}
                 onClick={() => setIsOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-6 py-3 transition-colors",
+                  "flex items-center gap-3 px-6 py-3 transition-all duration-300",
                   isActive
-                    ? "border-l-2 border-gold bg-gold/10 text-gold"
-                    : "border-l-2 border-transparent text-muted hover:text-white hover:bg-white/5"
+                    ? "border-l-2 border-gold bg-gold/10 text-gold shadow-[inset_4px_0_20px_rgba(201,168,76,0.15)]"
+                    : "border-l-2 border-transparent text-muted hover:text-gold hover:bg-gold/5 hover:border-gold/50"
                 )}
               >
-                <Icon fontSize="small" />
-                <span className="font-medium">{item.label}</span>
+                <Icon fontSize="small" className={isActive ? "drop-shadow-[0_0_8px_rgba(201,168,76,0.5)]" : ""} />
+                <span className={cn("font-medium tracking-wide", isActive ? "drop-shadow-[0_0_8px_rgba(201,168,76,0.3)]" : "")}>{item.label}</span>
               </Link>
             );
           })}
@@ -80,3 +80,4 @@ export function AppSidebar() {
     </>
   );
 }
+

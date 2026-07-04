@@ -6,6 +6,8 @@ import { useWallet } from "@/hooks/useWallet";
 import { useWalletStore } from "@/store/wallet.store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getSocket } from "@/lib/socket/client";
+import { Card } from "@/components/ui/Card";
+import { Button } from "../ui/Button";
 
 export function WalletWidget() {
   const { isLoading, formattedBalance, stakedUSD } = useWallet();
@@ -16,9 +18,12 @@ export function WalletWidget() {
     let socket: ReturnType<typeof getSocket>;
     try {
       socket = getSocket();
-      socket.on("wallet:balance_update", (data: { availableBalance: number }) => {
-        useWalletStore.getState().creditBalance(data.availableBalance);
-      });
+      socket.on(
+        "wallet:balance_update",
+        (data: { availableBalance: number }) => {
+          useWalletStore.getState().creditBalance(data.availableBalance);
+        },
+      );
     } catch {
       // Socket not yet initialized — ok, will reconnect
     }
@@ -28,49 +33,64 @@ export function WalletWidget() {
   }, []);
 
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 mt-4">
+    <Card variant="hud" padding="md">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-[#6B7280] uppercase tracking-widest font-semibold">
-          Your Wallet
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-success">
-          <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
-          Live
-        </span>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xs font-bold text-[#6B7280] tracking-widest uppercase">
+          Wallet
+        </h3>
+        <div className="flex items-center gap-1.5 bg-background/50 px-2 py-1 rounded-full border border-border/50">
+          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-[9px] font-bold text-white uppercase tracking-wider">
+            Live
+          </span>
+        </div>
       </div>
 
-      {/* Balance */}
-      <div className="text-center mb-3">
-        {isLoading ? (
-          <Skeleton className="w-28 h-9 mx-auto" />
-        ) : (
-          <p className="text-3xl font-bold text-white font-stats-mono">
-            {formattedBalance}
+      {/* Balances */}
+      <div className="space-y-4">
+        {/* Available */}
+        <div>
+          <p className="text-xs text-[#6B7280] uppercase tracking-wider mb-1">
+            Available Funds
           </p>
-        )}
-        {stakedUSD > 0 && (
-          <p className="text-xs text-amber-400 mt-1">
-            ⚡ ${stakedUSD.toFixed(2)} in active match
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-8 w-32" />
+          ) : (
+            <p className="text-3xl font-bold text-white font-stats-mono drop-shadow-md">
+              {formattedBalance}
+            </p>
+          )}
+        </div>
+
+        {/* Staked (only show if > 0) */}
+        {!isLoading && stakedUSD > 0 && (
+          <div className="flex justify-between items-center py-2 px-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <span className="text-xs text-amber-500 font-bold uppercase tracking-widest">
+              In Match
+            </span>
+            <span className="text-sm font-bold text-amber-400 font-stats-mono">
+              ${stakedUSD.toFixed(2)}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        <button
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-3 mt-6">
+        <Button
           onClick={() => router.push("/wallet?action=deposit")}
-          className="bg-gold text-background font-bold text-xs uppercase tracking-widest py-2 rounded-sm hover:opacity-90 transition-opacity"
+          className="bg-gold font-bold text-[11px] uppercase tracking-widest py-2.5 hover:bg-white transition-colors shadow-[0_0_15px_rgba(201,168,76,0.2)]"
         >
           Deposit
-        </button>
+        </Button>
         <button
           onClick={() => router.push("/wallet?action=withdraw")}
-          className="border border-gold text-gold font-bold text-xs uppercase tracking-widest py-2 rounded-sm hover:bg-gold/10 transition-colors"
+          className="bg-background/50 border border-border/50 text-[#6B7280] font-bold text-[11px] uppercase tracking-widest py-2.5 rounded-lg hover:text-white hover:border-border transition-colors"
         >
           Withdraw
         </button>
       </div>
-    </div>
+    </Card>
   );
 }

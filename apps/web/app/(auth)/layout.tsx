@@ -65,10 +65,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen bg-background">
       <AppNavbar />
       <AppSidebar />
-      <div className="lg:ml-[240px] pt-16 min-h-screen overflow-y-auto">
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          {children}
-        </div>
+      <div className="lg:ml-[240px] pt-16 min-h-screen">
+        {children}
       </div>
     </div>
   );

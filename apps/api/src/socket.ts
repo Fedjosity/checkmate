@@ -3,6 +3,7 @@ import http from 'http';
 import { env } from './config/env.config';
 
 let io: SocketIOServer;
+let connectedCount = 0;
 
 export const initSocket = (server: http.Server) => {
   io = new SocketIOServer(server, {
@@ -14,10 +15,12 @@ export const initSocket = (server: http.Server) => {
   });
 
   io.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    connectedCount++;
+    console.log(`Socket connected: ${socket.id} (total: ${connectedCount})`);
 
     socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+      connectedCount = Math.max(0, connectedCount - 1);
+      console.log(`Socket disconnected: ${socket.id} (total: ${connectedCount})`);
     });
   });
 
@@ -30,3 +33,6 @@ export const getIO = () => {
   }
   return io;
 };
+
+/** Returns the number of currently connected socket clients (live presence count) */
+export const getActiveCount = (): number => connectedCount;

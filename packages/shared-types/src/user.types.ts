@@ -24,3 +24,15 @@ export interface User {
   elo: Elo;
   createdAt: string;
 }
+
+export interface PublicUser {
+  uid: string;
+  displayName: string;
+  avatarUrl: string | null;
+  country: string;
+  elo: Elo;
+}
+
+export interface LeaderboardEntry extends PublicUser {
+  rank: number;
+}

@@ -37,27 +37,22 @@ export const walletController = {
   async initiateDeposit(req: Request, res: Response): Promise<void> {
     try {
       const uid = (req as any).user.uid;
-      const { bundleId, customCrowns } = req.body;
-
-      let crowns: number;
-      let priceWithFeeUSD: number;
-      let selectedBundleId: string;
-
-      if (bundleId) {
-        const bundle = CROWN_BUNDLES.find((b) => b.id === bundleId);
-        if (!bundle) {
-          res.status(400).json(error('Invalid bundle ID'));
-          return;
-        }
-        crowns = bundle.crowns;
-        priceWithFeeUSD = bundle.priceWithFeeUSD;
-        selectedBundleId = bundle.id;
-      } else {
-        crowns = customCrowns!;
-        const baseUSD = crowns / 100;
-        priceWithFeeUSD = Math.ceil(baseUSD * 1.02 * 100) / 100;
-        selectedBundleId = `custom_${crowns}`;
+      const { bundleId } = req.body;
+      
+      if (!bundleId) {
+        res.status(400).json(error('Bundle ID is required'));
+        return;
       }
+
+      const bundle = CROWN_BUNDLES.find((b) => b.id === bundleId);
+      if (!bundle) {
+        res.status(400).json(error('Invalid bundle ID'));
+        return;
+      }
+      
+      const crowns = bundle.crowns;
+      const priceWithFeeUSD = bundle.priceWithFeeUSD;
+      const selectedBundleId = bundle.id;
 
       // Get user info for payment
       const userDoc = await db.collection('users').doc(uid).get();

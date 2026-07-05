@@ -1,13 +1,10 @@
 import { z } from 'zod';
 
-export const depositSchema = z
-  .object({
-    bundleId: z.string().optional(),
-    customCrowns: z.number().int().min(100, 'Minimum purchase is 100 Crowns').optional(),
-  })
-  .refine((data) => data.bundleId || data.customCrowns, {
-    message: 'Provide either bundleId or customCrowns',
-  });
+export const depositSchema = z.object({
+  bundleId: z.string({
+    required_error: 'Bundle ID is required',
+  }),
+});
 
 export const withdrawSchema = z.object({
   crowns: z.number().int().min(200, 'Minimum withdrawal is 200 Crowns ($2.00)'),

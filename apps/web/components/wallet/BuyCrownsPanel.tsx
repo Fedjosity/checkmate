@@ -9,6 +9,7 @@ import { Button } from "../ui/Button";
 import { initiateDeposit } from "@/lib/api/wallet";
 import { formatBundlePrice } from "@/lib/utils/exchangeRate";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export function BuyCrownsPanel() {
   const { user } = useAuth();
@@ -71,8 +72,8 @@ export function BuyCrownsPanel() {
         <h2 className="text-xl font-bold text-white tracking-wide">
           Select a Bundle
         </h2>
-        <p className="text-sm text-muted mt-1">
-          Purchase Crowns to enter matches. 100 ♛ = $1.00 USD.
+        <p className="text-sm text-muted mt-1 flex items-center gap-1.5">
+          Purchase Crowns to enter matches. 100 <Image src="/Crown Coin Logo Official.png" alt="Crown" width={14} height={14} /> = $1.00 USD.
         </p>
       </div>
 

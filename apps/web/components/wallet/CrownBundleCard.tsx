@@ -2,6 +2,7 @@ import { CrownBundle } from '@checkmate/shared-types';
 import { formatBundlePrice } from '@/lib/utils/exchangeRate';
 import { cn } from '@/lib/utils/cn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import Image from "next/image";
 
 interface CrownBundleCardProps {
   bundle: CrownBundle;
@@ -36,8 +37,9 @@ export function CrownBundleCard({ bundle, isSelected, onSelect, country }: Crown
       )}
 
       <div className="flex flex-col items-center text-center mt-2">
-        <span className="text-3xl text-gold font-bold font-stats-mono drop-shadow-[0_2px_10px_rgba(201,168,76,0.3)]">
-          ♛ {bundle.crowns.toLocaleString()}
+        <span className="flex items-center gap-2 text-3xl text-gold font-bold font-stats-mono drop-shadow-[0_2px_10px_rgba(201,168,76,0.3)]">
+          <Image src="/Crown Coin Logo Official.png" alt="Crown" width={28} height={28} className="object-contain" />
+          {bundle.crowns.toLocaleString()}
         </span>
         <span className="text-muted text-xs uppercase tracking-widest mt-1">Crowns</span>
 

@@ -39,7 +39,7 @@ export function AppNavbar() {
           href="/wallet"
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-surface hover:bg-surface-bright transition-colors"
         >
-          <span className="text-gold text-sm">♛</span>
+          <Image src="/Crown Coin Logo Official.png" alt="Crowns" width={16} height={16} className="object-contain" />
           {isLoading ? (
             <div className="w-12 h-4 bg-white/10 rounded animate-pulse" />
           ) : (

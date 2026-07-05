@@ -38,7 +38,7 @@ export function useWallet() {
     availableUSD,
     stakedUSD: (wallet?.stakedBalance ?? 0) / 100,
     bonusUSD: (wallet?.bonusBalance ?? 0) / 100,
-    formattedBalance: `♛ ${formatCrowns(availableBalance)}`,
+    formattedBalance: formatCrowns(availableBalance),
     hasBalance: availableBalance > 0,
     refetch: query.refetch,
   };

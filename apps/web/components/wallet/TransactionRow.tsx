@@ -7,6 +7,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { format } from 'date-fns';
+import Image from "next/image";
 
 interface TransactionRowProps {
   tx: Transaction;
@@ -28,7 +29,7 @@ export function TransactionRow({ tx }: TransactionRowProps) {
       case 'refund':
         return <ReplayIcon fontSize="small" />;
       default:
-        return <span className="text-xl">♛</span>;
+        return <Image src="/Crown Coin Logo Official.png" alt="Crown" width={20} height={20} />;
     }
   };
 
@@ -67,12 +68,13 @@ export function TransactionRow({ tx }: TransactionRowProps) {
 
       <div className="flex flex-col items-end">
         <span
-          className={`text-sm font-bold font-stats-mono ${
+          className={`flex items-center gap-1 text-sm font-bold font-stats-mono ${
             isCredit ? 'text-green-500' : 'text-red-500'
           }`}
         >
           {isCredit ? '+' : ''}
-          {formatCrowns(tx.crownsAmount)} ♛
+          {formatCrowns(tx.crownsAmount)}
+          <Image src="/Crown Coin Logo Official.png" alt="Crown" width={14} height={14} className="opacity-80" />
         </span>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-[10px] text-muted font-stats-mono">

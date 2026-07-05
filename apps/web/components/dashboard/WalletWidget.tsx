@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { getSocket } from "@/lib/socket/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "../ui/Button";
+import Image from "next/image";
 
 export function WalletWidget() {
   const { isLoading, formattedBalance, stakedUSD, availableUSD } = useWallet();
@@ -63,7 +64,8 @@ export function WalletWidget() {
             <Skeleton className="h-8 w-32" />
           ) : (
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white font-stats-mono drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
+              <span className="flex items-center gap-2 text-3xl font-bold text-white font-stats-mono drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
+                <Image src="/Crown Coin Logo Official.png" alt="Crowns" width={28} height={28} className="object-contain" />
                 {formattedBalance}
               </span>
             </div>

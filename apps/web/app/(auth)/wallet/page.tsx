@@ -12,6 +12,7 @@ import { WithdrawModal } from "@/components/wallet/WithdrawModal";
 import { toast } from "sonner";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import CallMadeIcon from "@mui/icons-material/CallMade";
+import Image from "next/image";
 
 export default function WalletPage() {
   const router = useRouter();
@@ -50,8 +51,8 @@ export default function WalletPage() {
         <h1 className="text-3xl font-bold text-white tracking-wide uppercase">
           Wallet
         </h1>
-        <p className="text-muted mt-2">
-          Manage your CheckMate Crowns (♛)
+        <p className="text-muted mt-2 flex items-center gap-2">
+          Manage your CheckMate Crowns <Image src="/Crown Coin Logo Official.png" alt="Crown" width={16} height={16} />
         </p>
       </div>
 
@@ -73,7 +74,8 @@ export default function WalletPage() {
                 <Skeleton className="h-10 w-48" />
               ) : (
                 <div className="flex items-baseline gap-3">
-                  <span className="text-4xl md:text-5xl font-bold text-white font-stats-mono drop-shadow-[0_2px_15px_rgba(255,255,255,0.1)]">
+                  <span className="flex items-center gap-3 text-4xl md:text-5xl font-bold text-white font-stats-mono drop-shadow-[0_2px_15px_rgba(255,255,255,0.1)]">
+                    <Image src="/Crown Coin Logo Official.png" alt="Crowns" width={40} height={40} className="object-contain" />
                     {formattedBalance}
                   </span>
                 </div>

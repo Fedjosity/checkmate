@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
 
 interface WithdrawModalProps {
   isOpen: boolean;
@@ -78,8 +79,9 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
             <span className="text-sm text-muted font-bold uppercase tracking-widest">
               Available to Withdraw
             </span>
-            <span className="text-gold font-stats-mono font-bold">
-              ♛ {maxCrowns.toLocaleString()}
+            <span className="flex items-center gap-2 text-gold font-stats-mono font-bold">
+              <Image src="/Crown Coin Logo Official.png" alt="Crown" width={16} height={16} className="object-contain" />
+              {maxCrowns.toLocaleString()}
             </span>
           </div>
 

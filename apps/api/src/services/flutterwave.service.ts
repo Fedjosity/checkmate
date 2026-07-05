@@ -36,8 +36,6 @@ export async function initiatePayment(params: InitiatePaymentParams): Promise<{
   paymentLink: string;
   txRef: string;
 }> {
-  const flw = getFlw();
-
   const localAmount = convertUSDToLocal(params.priceWithFeeUSD, params.currency);
 
   const payload = {
@@ -52,7 +50,7 @@ export async function initiatePayment(params: InitiatePaymentParams): Promise<{
     customizations: {
       title: `CheckMate — ${params.crowns} Crowns`,
       description: `${params.crowns} ♛ CheckMate Crowns`,
-      logo: `${env.WEB_URL}/logo.png`,
+      logo: `${env.WEB_URL}/Crown Coin Logo Official.png`,
     },
     meta: {
       uid: params.uid,
@@ -62,20 +60,22 @@ export async function initiatePayment(params: InitiatePaymentParams): Promise<{
   };
 
   try {
-    const response = await flw.Charge.card(payload);
-    // Flutterwave Standard returns a link in response.data.link
-    const paymentLink = response?.data?.link || response?.meta?.authorization?.redirect;
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-    if (!paymentLink) {
-      // Fallback: use the payment links API
-      const linkResponse = await flw.PaymentPlan.create(payload);
-      return {
-        paymentLink: linkResponse?.data?.link ?? '',
-        txRef: params.txRef,
-      };
+    const data = await response.json();
+
+    if (data.status === 'success' && data.data?.link) {
+      return { paymentLink: data.data.link, txRef: params.txRef };
     }
 
-    return { paymentLink, txRef: params.txRef };
+    throw new Error(data.message || 'No payment link returned');
   } catch (err: any) {
     logger.error('Flutterwave payment initiation failed', {
       error: err.message,

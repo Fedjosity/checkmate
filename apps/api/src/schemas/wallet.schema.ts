@@ -12,9 +12,10 @@ export const withdrawSchema = z.object({
 });
 
 export const bankAccountSchema = z.object({
+  country: z.string().optional(),
   bankCode: z.string().min(1, 'Bank code is required'),
   accountNumber: z
     .string()
-    .min(10, 'Account number must be at least 10 digits')
-    .max(11, 'Account number must be at most 11 digits'),
+    .min(3, 'Account number must be at least 3 characters')
+    .max(30, 'Account number must be at most 30 characters'),
 });

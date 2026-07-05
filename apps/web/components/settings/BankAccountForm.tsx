@@ -11,14 +11,15 @@ import { toast } from "sonner";
 import { Skeleton } from "../ui/Skeleton";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { CountrySelect, COUNTRIES } from "../utils/CountryDropdowns";
 
 const bankAccountSchema = z.object({
+  country: z.string().min(1, "Country is required"),
   bankCode: z.string().min(1, "Bank code is required"),
   accountNumber: z
     .string()
-    .min(10, "Account number must be at least 10 digits")
-    .max(11, "Account number must be at most 11 digits")
-    .regex(/^\d+$/, "Account number must contain only numbers"),
+    .min(3, "Account number must be at least 3 characters")
+    .max(30, "Account number must be at most 30 characters"),
 });
 
 type BankAccountFormValues = z.infer<typeof bankAccountSchema>;
@@ -38,48 +39,66 @@ export function BankAccountForm() {
     reset,
     control,
     getValues,
+    setValue,
   } = useForm<BankAccountFormValues>({
     resolver: zodResolver(bankAccountSchema),
+    defaultValues: {
+      country: "Nigeria" // Default to Nigeria
+    }
   });
 
+  const watchCountry = useWatch({ control, name: "country" });
   const watchBankCode = useWatch({ control, name: "bankCode" });
   const watchAccountNumber = useWatch({ control, name: "accountNumber" });
 
   // Clear resolved name if inputs change
   useEffect(() => {
     setResolvedName(null);
-  }, [watchBankCode, watchAccountNumber]);
+  }, [watchCountry, watchBankCode, watchAccountNumber]);
 
+  // Load saved account on mount
   useEffect(() => {
-    async function loadData() {
+    async function fetchSaved() {
       try {
-        const [accountRes, banksRes] = await Promise.all([
-          getBankAccount(),
-          getBanks("NG")
-        ]);
-
-        if (accountRes.data?.bankAccount) {
-          setSavedAccount(accountRes.data.bankAccount);
-        }
-        
-        if (banksRes.data?.banks) {
-          // Sort banks alphabetically
-          const sortedBanks = banksRes.data.banks.sort((a, b) => a.name.localeCompare(b.name));
-          setBanks(sortedBanks);
+        const res = await getBankAccount();
+        if (res.data?.bankAccount) {
+          setSavedAccount(res.data.bankAccount);
         }
       } catch (err) {
-        console.error("Failed to load bank data", err);
-        toast.error("Failed to load supported banks. Please try again later.");
+        console.error("Failed to load bank account", err);
       } finally {
         setIsLoading(false);
       }
     }
-    loadData();
+    fetchSaved();
   }, []);
+
+  // Fetch banks when country changes
+  useEffect(() => {
+    async function loadBanks() {
+      if (!watchCountry) return;
+      const countryObj = COUNTRIES.find((c) => c.name === watchCountry);
+      if (!countryObj) return;
+
+      try {
+        const banksRes = await getBanks(countryObj.iso);
+        if (banksRes.data?.banks) {
+          const sortedBanks = banksRes.data.banks.sort((a, b) => a.name.localeCompare(b.name));
+          setBanks(sortedBanks);
+        } else {
+          setBanks([]);
+        }
+      } catch (err) {
+        console.error("Failed to load bank data", err);
+        setBanks([]);
+      }
+    }
+    loadBanks();
+  }, [watchCountry]);
 
   const handleVerify = async () => {
     const { bankCode, accountNumber } = getValues();
-    if (!bankCode || !accountNumber || accountNumber.length < 10) {
+    if (!bankCode || !accountNumber || accountNumber.length < 3) {
       toast.error("Please enter a valid bank and account number first.");
       return;
     }
@@ -117,7 +136,7 @@ export function BankAccountForm() {
         const finalAccount = { ...res.data.bankAccount, bankName };
         setSavedAccount(finalAccount);
         toast.success("Bank account saved successfully!");
-        reset();
+        reset({ ...data }); // Keep the form values but reset state
         setResolvedName(null);
       }
     } catch (err: any) {
@@ -170,6 +189,19 @@ export function BankAccountForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
             <label className="text-xs font-bold text-muted uppercase tracking-widest">
+              Country
+            </label>
+            <CountrySelect 
+              {...register("country")} 
+              allowedISOs={["NG", "GH", "KE", "UG", "ZA", "TZ", "RW", "US", "GB"]} 
+            />
+            {errors.country && (
+              <p className="text-xs text-red-500 mt-1">{errors.country.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-muted uppercase tracking-widest">
               Select Bank
             </label>
             <select
@@ -183,6 +215,9 @@ export function BankAccountForm() {
                 </option>
               ))}
             </select>
+            {banks.length === 0 && watchCountry && (
+              <p className="text-xs text-muted mt-1">No banks available or loading...</p>
+            )}
             {errors.bankCode && (
               <p className="text-xs text-red-500 mt-1">{errors.bankCode.message}</p>
             )}
@@ -191,7 +226,7 @@ export function BankAccountForm() {
           <Input
             label="Account Number"
             type="text"
-            placeholder="10-digit account number"
+            placeholder="Account number"
             {...register("accountNumber")}
             error={errors.accountNumber?.message}
             className="font-stats-mono"

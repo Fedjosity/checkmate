@@ -20,6 +20,7 @@ export const webhookController = {
 
     // Process asynchronously
     try {
+      console.log('WEBHOOK RECEIVED:', JSON.stringify(req.body, null, 2));
       const { event, data } = req.body;
 
       if (event === 'charge.completed' && data.status === 'successful') {

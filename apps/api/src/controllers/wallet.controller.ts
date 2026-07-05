@@ -232,6 +232,17 @@ export const walletController = {
     }
   },
 
+  async getBanks(req: Request, res: Response): Promise<void> {
+    try {
+      const country = (req.query.country as string) || 'NG';
+      const banks = await flutterwaveService.getBanks(country);
+      res.json(success({ banks }));
+    } catch (err: any) {
+      logger.error("GetBanks error", { error: err.message });
+      res.status(500).json(error("Failed to fetch banks"));
+    }
+  },
+
   async getBankAccount(req: Request, res: Response): Promise<void> {
     try {
       const uid = (req as any).user.uid;
@@ -249,4 +260,81 @@ export const walletController = {
       res.status(500).json(error("Failed to fetch bank account"));
     }
   },
+
+  async resolveBankAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const { bankCode, accountNumber } = req.body;
+
+      if (!bankCode || !accountNumber) {
+        res.status(400).json(error("Missing bank code or account number"));
+        return;
+      }
+
+      const { accountName } = await flutterwaveService.resolveAccount(
+        bankCode,
+        accountNumber
+      );
+
+      res.json(success({ accountName }));
+    } catch (err: any) {
+      logger.error("ResolveAccount error", { error: err.message });
+      if (err instanceof AppError) {
+        res.status(err.statusCode).json(error(err.message));
+        return;
+      }
+      res.status(500).json(error("Failed to resolve bank account"));
+    }
+  },
+
+  async verifyDeposit(req: Request, res: Response): Promise<void> {
+    try {
+      const uid = (req as any).user.uid;
+      const { transaction_id, tx_ref } = req.body;
+
+      if (!transaction_id || !tx_ref) {
+        res.status(400).json(error('Missing transaction ID or reference'));
+        return;
+      }
+
+      // Check if transaction is already complete
+      const txDoc = await db.collection('transactions').doc(tx_ref).get();
+      if (!txDoc.exists) {
+        res.status(404).json(error('Transaction not found'));
+        return;
+      }
+      const txData = txDoc.data()!;
+      if (txData.status === 'complete') {
+        res.json(success({ message: 'Already credited' }));
+        return;
+      }
+
+      if (txData.uid !== uid) {
+        res.status(403).json(error('Unauthorized'));
+        return;
+      }
+
+      // Verify with Flutterwave natively
+      const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+        headers: {
+          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+        }
+      });
+      const data = await response.json();
+
+      if (
+        data.status === 'success' && 
+        data.data.status === 'successful' && 
+        data.data.tx_ref === tx_ref && 
+        data.data.amount >= (txData.usdAmount / 100)
+      ) {
+        const newBalance = await walletService.creditCrownsFromDeposit(uid, tx_ref);
+        res.json(success({ message: 'Deposit verified and credited', newBalance }));
+      } else {
+        res.status(400).json(error('Payment verification failed'));
+      }
+    } catch (err: any) {
+      logger.error('VerifyDeposit error', { error: err.message });
+      res.status(500).json(error('Verification failed'));
+    }
+  }
 };

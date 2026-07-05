@@ -33,6 +33,8 @@ router.post(
 router.get("/transactions", requireAuth, walletController.getTransactions);
 
 // Bank account management
+router.get('/banks', requireAuth, walletController.getBanks);
+router.post('/resolve-account', requireAuth, walletController.resolveBankAccount);
 router.get("/bank-account", requireAuth, walletController.getBankAccount);
 router.post(
   "/bank-account",

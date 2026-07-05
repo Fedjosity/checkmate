@@ -148,6 +148,24 @@ export async function resolveAccount(
   }
 }
 
+export async function getBanks(country: string = 'NG'): Promise<{ code: string; name: string }[]> {
+  try {
+    const response = await fetch(`https://api.flutterwave.com/v3/banks/${country}`, {
+      headers: {
+        Authorization: `Bearer ${env.FLW_SECRET_KEY}`
+      }
+    });
+    const data = await response.json();
+    if (data.status === 'success' && data.data) {
+      return data.data.map((b: any) => ({ code: b.code, name: b.name }));
+    }
+    return [];
+  } catch (err: any) {
+    logger.error('Fetch banks failed', { error: err.message });
+    return [];
+  }
+}
+
 export function verifyWebhookSignature(payload: string, signature: string): boolean {
   if (!env.FLW_WEBHOOK_SECRET) {
     logger.warn('FLW_WEBHOOK_SECRET not set — skipping webhook verification');

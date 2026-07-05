@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { getBalance } from '@/lib/api/wallet';
 import { useWalletStore } from '@/store/wallet.store';
 import { useAuth } from './useAuth';
+import { formatCrowns } from '@/lib/utils/exchangeRate';
 
 export function useWallet() {
   const { isAuthenticated } = useAuth();
@@ -27,16 +28,18 @@ export function useWallet() {
     setLoading(query.isLoading);
   }, [query.isLoading, setLoading]);
 
-  const availableUSD = (wallet?.availableBalance ?? 0) / 100;
+  const availableBalance = wallet?.availableBalance ?? 0; // In Crowns
+  const availableUSD = availableBalance / 100; // 100 Crowns = $1
 
   return {
     wallet,
     isLoading: query.isLoading,
+    availableBalance,
     availableUSD,
     stakedUSD: (wallet?.stakedBalance ?? 0) / 100,
     bonusUSD: (wallet?.bonusBalance ?? 0) / 100,
-    formattedBalance: `$${availableUSD.toFixed(2)}`,
-    hasBalance: (wallet?.availableBalance ?? 0) > 0,
+    formattedBalance: `♛ ${formatCrowns(availableBalance)}`,
+    hasBalance: availableBalance > 0,
     refetch: query.refetch,
   };
 }

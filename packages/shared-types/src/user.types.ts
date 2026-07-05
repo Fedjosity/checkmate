@@ -1,8 +1,15 @@
 export interface Wallet {
-  availableBalance: number; // USD cents
+  availableBalance: number; // Crowns (integer). 100 Crowns = $1.00 USD
   stakedBalance: number;
-  bonusBalance: number;
+  bonusBalance: number; // always 0 in MVP
   currency: string;
+}
+
+export interface BankAccount {
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
 }
 
 export interface Elo {
@@ -22,6 +29,7 @@ export interface User {
   emailVerified: boolean;
   wallet: Wallet;
   elo: Elo;
+  bankAccount: BankAccount | null;
   createdAt: string;
 }
 
@@ -36,3 +44,4 @@ export interface PublicUser {
 export interface LeaderboardEntry extends PublicUser {
   rank: number;
 }
+

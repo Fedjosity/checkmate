@@ -6,8 +6,8 @@ interface WalletState {
   isLoading: boolean;
   setWallet: (wallet: Wallet) => void;
   setLoading: (loading: boolean) => void;
-  creditBalance: (amountCents: number) => void;
-  debitBalance: (amountCents: number) => void;
+  creditCrowns: (amountCrowns: number) => void;
+  debitCrowns: (amountCrowns: number) => void;
 }
 
 export const useWalletStore = create<WalletState>()((set) => ({
@@ -15,13 +15,13 @@ export const useWalletStore = create<WalletState>()((set) => ({
   isLoading: true,
   setWallet: (wallet) => set({ wallet, isLoading: false }),
   setLoading: (isLoading) => set({ isLoading }),
-  creditBalance: (amount) =>
+  creditCrowns: (amount) =>
     set((state) => ({
       wallet: state.wallet
         ? { ...state.wallet, availableBalance: state.wallet.availableBalance + amount }
         : null,
     })),
-  debitBalance: (amount) =>
+  debitCrowns: (amount) =>
     set((state) => ({
       wallet: state.wallet
         ? { ...state.wallet, availableBalance: state.wallet.availableBalance - amount }

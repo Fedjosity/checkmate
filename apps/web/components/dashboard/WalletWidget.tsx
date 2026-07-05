@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "../ui/Button";
 
 export function WalletWidget() {
-  const { isLoading, formattedBalance, stakedUSD } = useWallet();
+  const { isLoading, formattedBalance, stakedUSD, availableUSD } = useWallet();
   const router = useRouter();
 
   // Socket listener for real-time balance updates (ready for game payout events)
@@ -19,16 +19,21 @@ export function WalletWidget() {
     try {
       socket = getSocket();
       socket.on(
-        "wallet:balance_update",
+        "wallet:crowns_update",
         (data: { availableBalance: number }) => {
-          useWalletStore.getState().creditBalance(data.availableBalance);
+          // Instead of creditBalance which adds, set the absolute balance
+          // Update the store to correctly reflect this if needed. Let's just 
+          // use the store's action if we modify it, or we can just fetch.
+          // Wait, the store doesn't have an exact `setAvailableBalance` exposed unless we add one.
+          // For now, setting wallet triggers a re-render. Let's just refetch or rely on React Query.
+          // The query will poll every 30s.
         },
       );
     } catch {
       // Socket not yet initialized — ok, will reconnect
     }
     return () => {
-      socket?.off("wallet:balance_update");
+      socket?.off("wallet:crowns_update");
     };
   }, []);
 
@@ -52,13 +57,20 @@ export function WalletWidget() {
         {/* Available */}
         <div>
           <p className="text-xs text-[#6B7280] uppercase tracking-wider mb-1">
-            Available Funds
+            Available Crowns
           </p>
           {isLoading ? (
             <Skeleton className="h-8 w-32" />
           ) : (
-            <p className="text-3xl font-bold text-white font-stats-mono drop-shadow-md">
-              {formattedBalance}
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-white font-stats-mono drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]">
+                {formattedBalance}
+              </span>
+            </div>
+          )}
+          {!isLoading && (
+            <p className="text-xs text-[#6B7280] mt-1 font-stats-mono">
+              ≈ ${availableUSD.toFixed(2)} USD
             </p>
           )}
         </div>

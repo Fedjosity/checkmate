@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useWallet } from "@/hooks/useWallet";
 import { Card } from "@/components/ui/Card";
@@ -21,24 +21,32 @@ export default function WalletPage() {
 
   const [activeTab, setActiveTab] = useState<"buy" | "history">("buy");
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  
+  const hasHandledParams = useRef(false);
 
   useEffect(() => {
+    if (hasHandledParams.current) return;
+
     // Handle redirect actions
     const depositStatus = searchParams.get("deposit");
     if (depositStatus === "complete") {
+      hasHandledParams.current = true;
       toast.success("Deposit successful! Your Crowns are being credited.");
       router.replace("/wallet");
     } else if (depositStatus === "failed") {
+      hasHandledParams.current = true;
       toast.error("Deposit failed or was cancelled.");
       router.replace("/wallet");
     }
 
     const action = searchParams.get("action");
     if (action === "withdraw") {
+      hasHandledParams.current = true;
       setIsWithdrawModalOpen(true);
       // Clean up URL so refresh doesn't reopen modal
       router.replace("/wallet");
     } else if (action === "deposit") {
+      hasHandledParams.current = true;
       setActiveTab("buy");
       router.replace("/wallet");
     }
@@ -52,7 +60,13 @@ export default function WalletPage() {
           Wallet
         </h1>
         <p className="text-muted mt-2 flex items-center gap-2">
-          Manage your CheckMate Crowns <Image src="/Crown Coin Logo Official.png" alt="Crown" width={16} height={16} />
+          Manage your CheckMate Crowns{" "}
+          <Image
+            src="/Crown Coin Logo Official.png"
+            alt="Crown"
+            width={16}
+            height={16}
+          />
         </p>
       </div>
 
@@ -60,7 +74,7 @@ export default function WalletPage() {
       <Card variant="hud" padding="lg" className="relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 blur-[100px] pointer-events-none rounded-full" />
-        
+
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center text-gold shadow-[0_0_30px_rgba(201,168,76,0.15)]">
@@ -75,7 +89,13 @@ export default function WalletPage() {
               ) : (
                 <div className="flex items-baseline gap-3">
                   <span className="flex items-center gap-3 text-4xl md:text-5xl font-bold text-white font-stats-mono drop-shadow-[0_2px_15px_rgba(255,255,255,0.1)]">
-                    <Image src="/Crown Coin Logo Official.png" alt="Crowns" width={40} height={40} className="object-contain" />
+                    <Image
+                      src="/Crown Coin Logo Official.png"
+                      alt="Crowns"
+                      width={40}
+                      height={40}
+                      className="object-contain"
+                    />
                     {formattedBalance}
                   </span>
                 </div>

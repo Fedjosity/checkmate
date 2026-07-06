@@ -36,6 +36,7 @@ router.get("/transactions", requireAuth, walletController.getTransactions);
 router.get('/banks', requireAuth, walletController.getBanks);
 router.post('/resolve-account', requireAuth, walletController.resolveBankAccount);
 router.get("/bank-account", requireAuth, walletController.getBankAccount);
+router.get("/exchange-rate", requireAuth, walletController.getExchangeRate);
 router.post(
   "/bank-account",
   requireAuth,

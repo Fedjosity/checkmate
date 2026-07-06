@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useWallet } from "@/hooks/useWallet";
+import { useLocalCurrency } from "@/hooks/useLocalCurrency";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -18,6 +19,7 @@ export default function WalletPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoading, formattedBalance, availableUSD } = useWallet();
+  const { formatLocal, currency, isLoading: isCurrencyLoading } = useLocalCurrency();
 
   const [activeTab, setActiveTab] = useState<"buy" | "history">("buy");
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -102,7 +104,7 @@ export default function WalletPage() {
               )}
               {!isLoading && (
                 <p className="text-sm text-muted mt-2 font-stats-mono">
-                  ≈ ${availableUSD.toFixed(2)} USD
+                  ≈ {isCurrencyLoading ? "..." : formatLocal(availableUSD)} {currency !== "USD" && `(${currency})`}
                 </p>
               )}
             </div>

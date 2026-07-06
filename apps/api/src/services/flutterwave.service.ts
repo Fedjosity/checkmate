@@ -179,3 +179,22 @@ export function verifyWebhookSignature(payload: string, signature: string): bool
 
   return hash === signature;
 }
+
+export async function getExchangeRate(currency: string): Promise<number> {
+  if (currency === 'USD') return 1;
+  try {
+    const response = await fetch(`https://api.flutterwave.com/v3/rates?amount=1&to=${currency}&from=USD`, {
+      headers: {
+        Authorization: `Bearer ${env.FLW_SECRET_KEY}`
+      }
+    });
+    const data = await response.json();
+    if (data.status === 'success' && data.data?.rate) {
+      return data.data.rate;
+    }
+    return 0; // Fallback or throw
+  } catch (err: any) {
+    logger.error('Fetch exchange rate failed', { error: err.message, currency });
+    return 0;
+  }
+}

@@ -42,7 +42,13 @@ export const getBankAccount = () =>
   apiClient.get<{ bankAccount: BankAccount | null }>("/v1/wallet/bank-account");
 
 export const resolveBankAccount = (bankCode: string, accountNumber: string) =>
-  apiClient.post<{ accountName: string }>("/v1/wallet/resolve-account", { bankCode, accountNumber });
+  apiClient.post<{ accountName: string }>("/v1/wallet/resolve-account", {
+    bankCode,
+    accountNumber,
+  });
+
+export const getExchangeRate = (currency: string) =>
+  apiClient.get<{ rate: number }>(`/v1/wallet/exchange-rate?currency=${currency}`);
 
 export const getBanks = (country: string = 'NG') =>
   apiClient.get<{ banks: { code: string; name: string }[] }>(`/v1/wallet/banks?country=${country}`);

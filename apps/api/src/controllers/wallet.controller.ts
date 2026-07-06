@@ -243,6 +243,21 @@ export const walletController = {
     }
   },
 
+  async getExchangeRate(req: Request, res: Response): Promise<void> {
+    try {
+      const currency = (req.query.currency as string) || 'NGN';
+      const rate = await flutterwaveService.getExchangeRate(currency);
+      if (rate) {
+        res.json(success({ rate }));
+      } else {
+        res.status(400).json(error("Failed to fetch exchange rate"));
+      }
+    } catch (err: any) {
+      logger.error("GetExchangeRate error", { error: err.message });
+      res.status(500).json(error("Failed to fetch exchange rate"));
+    }
+  },
+
   async getBankAccount(req: Request, res: Response): Promise<void> {
     try {
       const uid = (req as any).user.uid;

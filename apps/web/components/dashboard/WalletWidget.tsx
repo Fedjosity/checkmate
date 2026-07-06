@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/hooks/useWallet";
+import { useLocalCurrency } from "@/hooks/useLocalCurrency";
 import { useWalletStore } from "@/store/wallet.store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getSocket } from "@/lib/socket/client";
@@ -12,26 +13,20 @@ import Image from "next/image";
 
 export function WalletWidget() {
   const { isLoading, formattedBalance, stakedUSD, availableUSD } = useWallet();
+  const { formatLocal, currency, isLoading: isCurrencyLoading } = useLocalCurrency();
   const router = useRouter();
 
-  // Socket listener for real-time balance updates (ready for game payout events)
+  // Socket listener for real-time balance updates
   useEffect(() => {
     let socket: ReturnType<typeof getSocket>;
     try {
       socket = getSocket();
       socket.on(
         "wallet:crowns_update",
-        (data: { availableBalance: number }) => {
-          // Instead of creditBalance which adds, set the absolute balance
-          // Update the store to correctly reflect this if needed. Let's just 
-          // use the store's action if we modify it, or we can just fetch.
-          // Wait, the store doesn't have an exact `setAvailableBalance` exposed unless we add one.
-          // For now, setting wallet triggers a re-render. Let's just refetch or rely on React Query.
-          // The query will poll every 30s.
-        },
+        (data: { availableBalance: number }) => {}
       );
     } catch {
-      // Socket not yet initialized — ok, will reconnect
+      // Socket not yet initialized
     }
     return () => {
       socket?.off("wallet:crowns_update");
@@ -72,7 +67,7 @@ export function WalletWidget() {
           )}
           {!isLoading && (
             <p className="text-xs text-[#6B7280] mt-1 font-stats-mono">
-              ≈ ${availableUSD.toFixed(2)} USD
+              ≈ {isCurrencyLoading ? "..." : formatLocal(availableUSD)} {currency !== "USD" && `(${currency})`}
             </p>
           )}
         </div>
@@ -84,7 +79,7 @@ export function WalletWidget() {
               In Match
             </span>
             <span className="text-sm font-bold text-amber-400 font-stats-mono">
-              ${stakedUSD.toFixed(2)}
+              {isCurrencyLoading ? "..." : formatLocal(stakedUSD)}
             </span>
           </div>
         )}

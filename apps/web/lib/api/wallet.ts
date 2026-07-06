@@ -13,6 +13,9 @@ export const initiateDeposit = (data: {
     data,
   );
 
+export const createKycSession = () =>
+  apiClient.post<{ url: string }>("/v1/wallet/kyc-session");
+
 export const initiateWithdrawal = (data: {
   crowns: number;
   bankAccountId?: string;

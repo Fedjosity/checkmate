@@ -27,6 +27,7 @@ export interface User {
   country: string;
   avatarUrl: string | null;
   emailVerified: boolean;
+  kycStatus: 'unverified' | 'pending' | 'verified' | 'failed';
   wallet: Wallet;
   elo: Elo;
   bankAccount: BankAccount | null;

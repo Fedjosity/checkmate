@@ -61,6 +61,7 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
       country,
       avatarUrl: firebaseUser.picture || null,
       emailVerified: isEmailVerified,
+      kycStatus: 'unverified',
       wallet: DEFAULT_WALLET,
       elo: DEFAULT_ELO,
       createdAt: now,

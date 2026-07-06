@@ -5,10 +5,11 @@ import { Modal } from "../ui/Modal";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useWallet } from "@/hooks/useWallet";
-import { initiateWithdrawal } from "@/lib/api/wallet";
+import { initiateWithdrawal, createKycSession } from "@/lib/api/wallet";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 
@@ -67,8 +68,56 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     }
   };
 
+  const handleStartKyc = async () => {
+    setIsLoading(true);
+    try {
+      const res = await createKycSession();
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start identity verification");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const crownsAmount = parseInt(crownsInput, 10) || 0;
   const usdValue = crownsAmount / 100;
+
+  const kycStatus = user?.kycStatus || 'unverified';
+
+  if (kycStatus === 'pending') {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <div className="text-center py-8">
+          <VerifiedUserIcon className="text-gold mb-4" style={{ fontSize: 48 }} />
+          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Verification in Progress</h2>
+          <p className="text-muted text-sm mb-6">Your identity verification is currently being processed. Please check back shortly.</p>
+          <Button variant="ghost" onClick={onClose} className="w-full">Close</Button>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (kycStatus !== 'verified') {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <div className="text-center py-8">
+          <VerifiedUserIcon className="text-gold mb-4 drop-shadow-[0_0_15px_rgba(201,168,76,0.3)]" style={{ fontSize: 48 }} />
+          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Verify Your Identity</h2>
+          <p className="text-muted text-sm mb-6 leading-relaxed">
+            To keep the platform secure and comply with regulations, we require a quick identity check before your first withdrawal.
+          </p>
+          
+          <div className="flex gap-3">
+            <Button variant="ghost" className="w-full" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" className="w-full" onClick={handleStartKyc} isLoading={isLoading}>Start Verification</Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>

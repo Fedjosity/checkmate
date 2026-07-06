@@ -4,8 +4,69 @@ import { db } from "../config/firebase.config";
 import { getIO } from "../socket";
 import * as walletService from "../services/wallet.service";
 import { env } from "../config/env.config";
+import { verifyDiditWebhookSignature } from "../services/didit.service";
 
 export const webhookController = {
+  async handleDidit(req: Request, res: Response): Promise<void> {
+    try {
+      const signature = req.headers['x-signature-v2'] as string;
+      const payload = JSON.stringify(req.body);
+
+      console.log('DIDIT WEBHOOK RECEIVED:', JSON.stringify(req.body, null, 2));
+      
+      if (signature && !verifyDiditWebhookSignature(payload, signature)) {
+        logger.warn('Invalid Didit webhook signature');
+        res.status(401).send('Invalid signature');
+        return;
+      }
+
+      const payloadObj = req.body;
+      const { webhook_type, status, vendor_data, changes } = payloadObj;
+      
+      // Look for session status updates or user data updates that indicate approval
+      if (webhook_type === 'status.updated' || webhook_type === 'user.data.updated') {
+        const uid = vendor_data;
+        if (!uid) {
+          res.status(400).send('No vendor_data (uid) provided');
+          return;
+        }
+
+        // Determine if they passed KYC
+        let kycStatus = 'pending';
+        
+        if (status === 'Approved' || status === 'Completed' || status === 'ACTIVE') {
+          // Sometimes Didit sends 'ACTIVE' for user.data.updated when they are fully approved
+          // Let's also check if features are approved
+          if (changes?.features?.current) {
+            const features = changes.features.current;
+            const isApproved = Object.values(features).every(val => val === 'Approved');
+            if (isApproved) {
+              kycStatus = 'verified';
+            }
+          } else if (status === 'Approved' || status === 'Completed') {
+            kycStatus = 'verified';
+          } else {
+            kycStatus = 'verified'; // Fallback if just ACTIVE
+          }
+        } else if (status === 'Declined' || status === 'Failed') {
+          kycStatus = 'failed';
+        }
+
+        if (kycStatus !== 'pending') {
+          await db.collection('users').doc(uid).update({
+            kycStatus
+          });
+          logger.info(`Didit KYC status updated for ${uid} to ${kycStatus}`);
+        }
+      }
+
+      res.status(200).send('Webhook received');
+    } catch (error: any) {
+      logger.error('Didit webhook error', { error: error.message });
+      res.status(500).send('Webhook error');
+    }
+  },
+
   async handleFlutterwave(req: Request, res: Response): Promise<void> {
     // Verify signature
     const signature = req.headers["verif-hash"] as string;

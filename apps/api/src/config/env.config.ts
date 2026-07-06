@@ -14,6 +14,8 @@ const envSchema = z.object({
   WEB_URL: z.string().default('http://localhost:3000'),
   API_URL: z.string().default('http://localhost:4000/api/v1'),
   DIDIT_API_KEY: z.string().optional(),
+  DIDIT_WORKFLOW_ID: z.string().optional(),
+  DIDIT_WEBHOOK_SECRET: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_PROVIDER: z.string().default('resend'),
 });

@@ -34,6 +34,21 @@ export const walletController = {
     }
   },
 
+  async createKycSession(req: Request, res: Response): Promise<void> {
+    try {
+      const uid = (req as any).user.uid;
+      const url = await require('../services/didit.service').createKycSession(uid);
+      res.json(success({ url }));
+    } catch (err: any) {
+      logger.error("Create KYC session error", { error: err.message });
+      if (err.statusCode) {
+        res.status(err.statusCode).json(error(err.message));
+      } else {
+        res.status(500).json(error("Failed to start identity verification"));
+      }
+    }
+  },
+
   async initiateDeposit(req: Request, res: Response): Promise<void> {
     try {
       const uid = (req as any).user.uid;
@@ -120,6 +135,11 @@ export const walletController = {
 
       const userData = userDoc.data()!;
       const bankAccount = userData.bankAccount;
+
+      if (userData.kycStatus !== 'verified') {
+        res.status(403).json(error("Identity verification required before withdrawing"));
+        return;
+      }
 
       if (!bankAccount || !bankAccount.accountNumber) {
         res

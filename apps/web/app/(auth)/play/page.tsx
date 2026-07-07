@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { GameModeCard } from "@/components/matchmaking/GameModeCard";
-import { GAME_MODES } from "@/lib/constants/gameModes";
-import { toast } from "sonner";
+import { SearchingModal } from "@/components/matchmaking/SearchingModal";
+import { useMatchmaking } from "@/hooks/useMatchmaking";
+import { useQueueDepths } from "@/hooks/useQueueDepths";
 
 type TimeControl = "bullet" | "blitz" | "rapid" | "classic";
 
@@ -16,18 +17,25 @@ const TIME_CONTROLS: { id: TimeControl; label: string; desc: string }[] = [
 ];
 
 export default function PlayPage() {
-  const { hasBalance } = useAuth();
+  const { availableBalance } = useAuth();
   const [activeTab, setActiveTab] = useState<TimeControl>("blitz");
+  
+  const { state, matchData, joinQueue, leaveQueue, resetState } = useMatchmaking();
+  const { getDepth } = useQueueDepths();
 
   const handleSelectMode = (modeKey: string, stake?: number) => {
-    toast.success(`Joining ${modeKey} queue (${activeTab})`, {
-      description: stake ? `Entry fee: $${(stake / 100).toFixed(2)}` : "Free entry",
-    });
-    // Further matchmaking logic goes here
+    joinQueue(modeKey as any, activeTab, stake || 0);
   };
 
   return (
-    <main className="max-w-6xl mx-auto py-8">
+    <main className="max-w-6xl mx-auto py-8 relative">
+      <SearchingModal 
+        state={state} 
+        matchData={matchData} 
+        onCancel={leaveQueue} 
+        onClose={resetState} 
+      />
+
       <div className="mb-12">
         <h1 className="font-headline-lg text-headline-lg text-white mb-4">
           Choose Your Arena
@@ -68,12 +76,14 @@ export default function PlayPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <GameModeCard
           modeKey="friendly"
-          hasBalance={hasBalance}
+          availableBalance={availableBalance}
+          queueDepth={getDepth('friendly', activeTab, 0)}
           onSelect={handleSelectMode}
         />
         <GameModeCard
           modeKey="competitive"
-          hasBalance={hasBalance}
+          availableBalance={availableBalance}
+          queueDepth={getDepth('competitive', activeTab, 0)}
           onSelect={handleSelectMode}
         />
         <div className="xl:col-span-1 md:col-span-2 xl:mt-0 relative">
@@ -81,13 +91,14 @@ export default function PlayPage() {
           <div className="absolute -inset-1 bg-gradient-to-b from-gold/20 to-transparent rounded-[20px] opacity-50 pointer-events-none" />
           <GameModeCard
             modeKey="paid"
-            hasBalance={hasBalance}
+            availableBalance={availableBalance}
+            // we don't have the specific stake amount here yet to pass to getDepth, GameModeCard needs to be smart or we just omit for paid
             onSelect={handleSelectMode}
           />
         </div>
         <GameModeCard
           modeKey="tournament"
-          hasBalance={hasBalance}
+          availableBalance={availableBalance}
           onSelect={handleSelectMode}
         />
       </div>

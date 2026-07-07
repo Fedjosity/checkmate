@@ -6,6 +6,7 @@ import userRoutes from './user.routes';
 import walletRoutes from './wallet.routes';
 import leaderboardRoutes from './leaderboard.routes';
 import webhookRoutes from './webhook.routes';
+import matchmakingRoutes from './matchmaking.routes';
 
 const router = Router();
 
@@ -21,6 +22,6 @@ router.use('/v1/auth', authRoutes);
 router.use('/v1/users', userRoutes);
 router.use('/v1/wallet', walletRoutes);
 router.use('/v1/leaderboard', leaderboardRoutes);
+router.use('/v1/matchmaking', matchmakingRoutes);
 
 export default router;
-

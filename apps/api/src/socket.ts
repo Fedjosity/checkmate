@@ -1,6 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import http from 'http';
 import { env } from './config/env.config';
+import { startMatchmakingLoop, registerMatchmakingHandlers } from './socket/handlers/matchmaking.handler';
 
 let io: SocketIOServer;
 let connectedCount = 0;
@@ -14,9 +15,13 @@ export const initSocket = (server: http.Server) => {
     },
   });
 
+  startMatchmakingLoop(io);
+
   io.on('connection', (socket) => {
     connectedCount++;
     console.log(`Socket connected: ${socket.id} (total: ${connectedCount})`);
+
+    registerMatchmakingHandlers(socket);
 
     socket.on('disconnect', () => {
       connectedCount = Math.max(0, connectedCount - 1);

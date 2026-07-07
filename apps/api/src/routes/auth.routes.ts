@@ -23,6 +23,15 @@ const DEFAULT_ELO = {
   bullet: 1200,
   classic: 1200,
   gamesPlayed: 0,
+  blitzRP: 0,
+  rapidRP: 0,
+  bulletRP: 0,
+  classicRP: 0,
+  blitzStreak: 0,
+  rapidStreak: 0,
+  bulletStreak: 0,
+  classicStreak: 0,
+  isTop500: false,
 };
 
 // ─── Helper: generate a 6-digit OTP ─────────────────────────

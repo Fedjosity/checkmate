@@ -17,7 +17,7 @@ export const leaderboardController = {
 
       const snapshot = await db
         .collection('users')
-        .orderBy(`elo.${tc}`, 'desc')
+        .orderBy(`elo.${tc}RP`, 'desc')
         .limit(limit)
         .get();
 
@@ -39,7 +39,7 @@ export const leaderboardController = {
       if (firebaseUser?.uid) {
         const myRankSnapshot = await db
           .collection('users')
-          .orderBy(`elo.${tc}`, 'desc')
+          .orderBy(`elo.${tc}RP`, 'desc')
           .get();
         const myIdx = myRankSnapshot.docs.findIndex((d) => d.id === firebaseUser.uid);
         myRank = myIdx >= 0 ? myIdx + 1 : null;

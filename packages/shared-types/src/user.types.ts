@@ -18,6 +18,15 @@ export interface Elo {
   bullet: number;
   classic: number;
   gamesPlayed: number;
+  blitzRP: number;
+  rapidRP: number;
+  bulletRP: number;
+  classicRP: number;
+  blitzStreak: number;
+  rapidStreak: number;
+  bulletStreak: number;
+  classicStreak: number;
+  isTop500: boolean;
 }
 
 export interface User {

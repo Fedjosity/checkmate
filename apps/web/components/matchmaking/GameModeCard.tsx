@@ -11,21 +11,23 @@ import CheckIcon from "@mui/icons-material/Check";
 
 interface GameModeCardProps {
   modeKey: keyof typeof GAME_MODES;
-  hasBalance: boolean;
+  availableBalance: number;
+  queueDepth?: number;
   onSelect?: (modeKey: string, stake?: number) => void;
 }
 
-export function GameModeCard({ modeKey, hasBalance, onSelect }: GameModeCardProps) {
+export function GameModeCard({ modeKey, availableBalance, queueDepth, onSelect }: GameModeCardProps) {
   const router = useRouter();
   const mode = GAME_MODES[modeKey];
   const [selectedStake, setSelectedStake] = useState<number>(
     mode.stakeTiers ? mode.stakeTiers[0] : 0
   );
 
-  const potentialWin = ((selectedStake * 2 * 0.93) / 100).toFixed(2);
+  const hasEnoughBalance = !mode.requiresBalance || availableBalance >= selectedStake;
+  const potentialWin = ((selectedStake * 2 * 0.92) / 100).toFixed(2);
 
   const handleAction = () => {
-    if (mode.requiresBalance && !hasBalance) {
+    if (mode.requiresBalance && !hasEnoughBalance) {
       router.push("/wallet");
       return;
     }
@@ -83,7 +85,7 @@ export function GameModeCard({ modeKey, hasBalance, onSelect }: GameModeCardProp
                 Potential win: ${potentialWin}
               </p>
               <p className="text-xs text-muted">
-                Platform fee: 7% &middot; Instant payout on win
+                Platform fee: 8% &middot; Instant payout on win
               </p>
             </div>
           </div>
@@ -91,7 +93,14 @@ export function GameModeCard({ modeKey, hasBalance, onSelect }: GameModeCardProp
       </div>
 
       <div className="mt-auto">
-        {mode.requiresBalance && !hasBalance ? (
+        {queueDepth !== undefined && (
+          <div className="text-center text-xs text-muted mb-3 flex items-center justify-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+            {queueDepth} {queueDepth === 1 ? 'player' : 'players'} in queue
+          </div>
+        )}
+
+        {mode.requiresBalance && !hasEnoughBalance ? (
           <div className="space-y-3">
             <Button
               variant="secondary"
@@ -103,7 +112,7 @@ export function GameModeCard({ modeKey, hasBalance, onSelect }: GameModeCardProp
             </Button>
             <div className="flex items-center justify-center gap-1.5 text-xs">
               <WarningAmberIcon sx={{ fontSize: 16 }} className="text-amber-500" />
-              <span className="text-amber-500">No balance &middot; </span>
+              <span className="text-amber-500">Insufficient balance &middot; </span>
               <button onClick={() => router.push("/wallet")} className="text-gold hover:underline">
                 Add funds
               </button>

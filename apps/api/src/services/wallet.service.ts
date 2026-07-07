@@ -154,3 +154,112 @@ export async function getTransactions(
 
   return { transactions, total };
 }
+
+/**
+ * Escrow Crowns for matchmaking.
+ * Moves Crowns from availableBalance to stakedBalance.
+ */
+export async function escrowCrowns(
+  uid: string,
+  crowns: number,
+  txRef: string,
+  txType: string = 'match_escrow'
+): Promise<{ available: number; staked: number }> {
+  const userRef = db.collection('users').doc(uid);
+  const txDocRef = db.collection('transactions').doc(txRef);
+
+  const balances = await db.runTransaction(async (t) => {
+    const userDoc = await t.get(userRef);
+    if (!userDoc.exists) throw new AppError('User not found', 404);
+
+    const userData = userDoc.data()!;
+    const availableBalance = userData.wallet?.availableBalance ?? 0;
+    const stakedBalance = userData.wallet?.stakedBalance ?? 0;
+
+    if (availableBalance < crowns) {
+      throw new AppError('Insufficient Crown balance', 400);
+    }
+
+    const newAvailable = availableBalance - crowns;
+    const newStaked = stakedBalance + crowns;
+
+    t.update(userRef, {
+      'wallet.availableBalance': newAvailable,
+      'wallet.stakedBalance': newStaked,
+    });
+
+    t.set(
+      txDocRef,
+      {
+        uid,
+        type: txType,
+        crownsAmount: -crowns, // Negative for available balance
+        usdAmount: 0,
+        status: 'complete',
+        provider: 'internal',
+        providerRef: null,
+        description: `${crowns} Crowns escrowed for match`,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    return { available: newAvailable, staked: newStaked };
+  });
+
+  logger.info('Crowns escrowed', { uid, crowns, txRef, balances });
+  return balances;
+}
+
+/**
+ * Release escrowed Crowns.
+ * Moves Crowns from stakedBalance back to availableBalance.
+ */
+export async function releaseEscrow(
+  uid: string,
+  crowns: number,
+  txRef: string = `release_${uid}_${Date.now()}`
+): Promise<{ available: number; staked: number }> {
+  const userRef = db.collection('users').doc(uid);
+  const txDocRef = db.collection('transactions').doc(txRef);
+
+  const balances = await db.runTransaction(async (t) => {
+    const userDoc = await t.get(userRef);
+    if (!userDoc.exists) throw new AppError('User not found', 404);
+
+    const userData = userDoc.data()!;
+    const availableBalance = userData.wallet?.availableBalance ?? 0;
+    const stakedBalance = userData.wallet?.stakedBalance ?? 0;
+
+    const newAvailable = availableBalance + crowns;
+    const newStaked = Math.max(0, stakedBalance - crowns);
+
+    t.update(userRef, {
+      'wallet.availableBalance': newAvailable,
+      'wallet.stakedBalance': newStaked,
+    });
+
+    t.set(
+      txDocRef,
+      {
+        uid,
+        type: 'escrow_release',
+        crownsAmount: crowns,
+        usdAmount: 0,
+        status: 'complete',
+        provider: 'internal',
+        providerRef: null,
+        description: `${crowns} Crowns released from escrow`,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    return { available: newAvailable, staked: newStaked };
+  });
+
+  logger.info('Escrow released', { uid, crowns, txRef, balances });
+  return balances;
+}

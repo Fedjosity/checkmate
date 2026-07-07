@@ -5,6 +5,7 @@ import { usePlatformStats } from "@/hooks/usePlatformStats";
 import { useMiniLeaderboard } from "@/hooks/useLeaderboard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
+import { rpToRank } from "@checkmate/shared-types";
 
 export function LiveWidget() {
   const router = useRouter();
@@ -49,9 +50,11 @@ export function LiveWidget() {
           ? [1, 2, 3].map((i) => (
               <Skeleton key={i} className="w-full h-10 rounded-md" />
             ))
-          : players.slice(0, 3).map((player, idx) => (
+          : players.slice(0, 3).map((player, idx) => {
+              const rank = rpToRank(player.elo?.blitzRP ?? 0, player.elo?.isTop500);
+              return (
               <div key={player.uid} className="flex items-center gap-3 py-2 px-2 hover:bg-background/40 rounded-lg transition-colors cursor-default">
-                {/* Rank */}
+                {/* Rank number */}
                 <span className="text-xs font-stats-mono text-[#6B7280] w-3 flex-shrink-0">
                   {idx + 1}
                 </span>
@@ -77,12 +80,15 @@ export function LiveWidget() {
                   {player.displayName}
                 </span>
 
-                {/* ELO */}
-                <span className="text-sm text-gold font-stats-mono font-bold flex-shrink-0 drop-shadow-md">
-                  {player.elo?.blitz ?? 1200}
-                </span>
+                {/* Rank Badge instead of ELO */}
+                <div className="flex items-center gap-1.5" title={rank.label}>
+                  <span className="text-lg" style={{ color: rank.color }}>{rank.icon}</span>
+                  <span className="text-xs font-stats-mono" style={{ color: rank.color }}>
+                    {player.elo?.blitzRP ?? 0}
+                  </span>
+                </div>
               </div>
-            ))}
+            )})}
       </div>
 
       {/* Full Leaderboard Link */}

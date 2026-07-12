@@ -15,8 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(apiLimiter);
 
+import * as Sentry from '@sentry/node';
+
 // Mount routes
 app.use('/', routes);
+
+// Sentry Error Handler (must be before custom error handlers)
+Sentry.setupExpressErrorHandler(app);
 
 // Global error handler
 app.use(errorHandler);

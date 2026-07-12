@@ -20,6 +20,9 @@ importers:
       '@checkmate/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@sentry/node':
+        specifier: ^10.65.0
+        version: 10.65.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.1))
       chess.js:
         specifier: ^1.0.0-beta.8
         version: 1.4.0

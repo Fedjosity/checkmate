@@ -10,8 +10,9 @@ export const Footer = () => {
             alt="CheckMate Logo"
             width={500}
             height={150}
-            className="h-12 md:h-16 w-auto scale-[2.5] origin-left"
+            className="h-12 w-auto scale-[2.5] origin-left"
             src="/logo2.png"
+            unoptimized
           />
         </div>
         <p className="text-on-surface-variant font-body-md text-sm ml-2">

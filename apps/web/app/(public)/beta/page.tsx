@@ -16,6 +16,7 @@ export default function BetaSignupPage() {
               className="h-24 w-auto"
               src="/logo2.png"
               alt="CheckMate Logo"
+              unoptimized
             />
           </div>
           <div className="font-label-caps text-[12px] text-primary uppercase mb-2">

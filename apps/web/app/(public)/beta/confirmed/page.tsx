@@ -20,6 +20,7 @@ const ConfirmationContent = () => {
             className="h-24 w-auto"
             src="/logo2.png"
             alt="CheckMate Logo"
+            unoptimized
           />
         </div>
         <div className="font-label-caps text-[12px] text-success uppercase mb-2">

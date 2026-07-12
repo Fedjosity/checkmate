@@ -12,6 +12,7 @@ export const Navbar = () => {
           height={150}
           className="h-10 md:h-12 w-auto scale-[2.5] origin-left"
           src="/logo2.png"
+          unoptimized
           priority
         />
       </div>

@@ -44,9 +44,10 @@ export default function BetaStatusPage() {
             <Image
               width={500}
               height={150}
-              className="h-24 w-auto"
+              className="h-12 w-auto scale-[2.5] origin-center"
               src="/logo2.png"
               alt="CheckMate Logo"
+              unoptimized
             />
           </div>
           <div className="font-label-caps text-[12px] text-primary uppercase mb-2">

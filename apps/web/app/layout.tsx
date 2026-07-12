@@ -11,16 +11,16 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jet
 export const metadata: Metadata = {
   metadataBase: new URL('https://playcheckmate.app'),
   title: {
-    default: "CheckMate | Elite Competitive Chess",
-    template: "%s | CheckMate"
+    default: "Play Checkmate Africa | Elite Competitive Chess",
+    template: "%s | Play Checkmate Africa"
   },
   description: "Join the elite competitive skill chess platform. Play for stakes, climb the ranks, and prove your mastery in bullet, blitz, and rapid formats.",
   keywords: ["chess", "competitive chess", "play chess online", "chess stakes", "chess rewards", "blitz chess", "esports chess"],
   openGraph: {
-    title: "CheckMate | Elite Competitive Chess",
+    title: "Play Checkmate Africa | Elite Competitive Chess",
     description: "Join the elite competitive skill chess platform. Play for stakes, climb the ranks, and prove your mastery.",
     url: "https://playcheckmate.app",
-    siteName: "CheckMate",
+    siteName: "Play Checkmate Africa",
     images: [
       {
         url: "/og-image.jpg", // We can add an actual image later or fallback
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CheckMate | Elite Competitive Chess",
+    title: "Play Checkmate Africa | Elite Competitive Chess",
     description: "Join the elite competitive skill chess platform. Play for stakes, climb the ranks, and prove your mastery.",
     images: ["/og-image.jpg"],
   },
@@ -53,6 +53,17 @@ export default function RootLayout({
     <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Play Checkmate Africa",
+              "url": "https://playcheckmate.app/"
+            })
+          }}
+        />
       </head>
       <body className="font-body-md text-white bg-[#0A0B0F] antialiased">
         <Providers>

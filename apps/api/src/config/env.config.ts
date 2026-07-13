@@ -20,6 +20,8 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   ZEPTOMAIL_API_KEY: z.string().optional(),
   ZEPTOMAIL_URL: z.string().default('https://api.zeptomail.com/v1.1/email'),
+  ZEPTOMAIL_FROM_EMAIL: z.string().default('hello@playcheckmate.app'),
+  ZEPTOMAIL_FROM_NAME: z.string().default('Play CheckMate Africa'),
   EMAIL_PROVIDER: z.enum(['resend', 'zeptomail']).default('resend'),
 });
 

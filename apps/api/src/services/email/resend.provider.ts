@@ -14,7 +14,7 @@ export class ResendProvider implements IEmailProvider {
   ): Promise<{ success: boolean; id?: string }> {
     try {
       const { data, error } = await this.resend.emails.send({
-        from: "CheckMate <hello@updates.playcheckmate.app>",
+        from: "CheckMate <hello@mail.playcheckmate.app>",
         to: [payload.to],
         subject: payload.subject,
         html: payload.htmlBody,

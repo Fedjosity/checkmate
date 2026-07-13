@@ -13,6 +13,9 @@ const envSchema = z.object({
   FLW_WEBHOOK_SECRET: z.string().optional(),
   DIDIT_API_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  ZEPTOMAIL_API_KEY: z.string().optional(),
+  ZEPTOMAIL_URL: z.string().default('https://api.zeptomail.com/v1.1/email'),
+  EMAIL_PROVIDER: z.enum(['resend', 'zeptomail']).default('resend'),
 });
 
 const _env = envSchema.safeParse(process.env);

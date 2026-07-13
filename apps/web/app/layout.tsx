@@ -3,6 +3,7 @@ import { Space_Grotesk, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/goog
 import "./globals.css";
 import { Providers } from "./providers";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { Analytics } from "@vercel/analytics/next";
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta" });
@@ -69,6 +70,7 @@ export default function RootLayout({
         <Providers>
           <SmoothScroll>{children}</SmoothScroll>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

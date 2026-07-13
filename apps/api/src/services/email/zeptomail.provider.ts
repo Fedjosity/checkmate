@@ -22,8 +22,8 @@ export class ZeptoMailProvider implements IEmailProvider {
         },
         body: JSON.stringify({
           from: {
-            address: "hello@playcheckmate.app", // Update to your verified zepto address
-            name: "CheckMate",
+            address: env.ZEPTOMAIL_FROM_EMAIL,
+            name: env.ZEPTOMAIL_FROM_NAME,
           },
           to: [
             {

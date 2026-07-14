@@ -12,12 +12,12 @@ export interface GameMode {
 }
 
 export const GAME_MODES: Record<string, GameMode> = {
-  friendly: {
-    label: "Friendly Match",
+  play_online: {
+    label: "Play Online",
     icon: "♟",
     accentColor: "#0EA5E9",
     badge: "FREE",
-    badgeStyle: "neutral" as const,
+    badgeStyle: "neutral",
     description: "No entry fee · No stakes · No pressure",
     features: [
       "Play anonymous opponents",
@@ -32,7 +32,7 @@ export const GAME_MODES: Record<string, GameMode> = {
     icon: "♜",
     accentColor: "#C9A84C",
     badge: "RANKED",
-    badgeStyle: "gold" as const,
+    badgeStyle: "gold",
     description: "No entry fee · ELO rated · Build your rank",
     features: [
       "Matched by ELO bracket",
@@ -42,12 +42,27 @@ export const GAME_MODES: Record<string, GameMode> = {
     ctaLabel: "Play Ranked",
     requiresBalance: false,
   },
-  paid: {
-    label: "Paid Competitive",
+  bot: {
+    label: "Play Bots",
+    icon: "🤖",
+    accentColor: "#A855F7",
+    badge: "PRACTICE",
+    badgeStyle: "neutral",
+    description: "Play against Stockfish AI at various difficulties",
+    features: [
+      "5 difficulty levels",
+      "Instant matchmaking",
+      "No ELO impact",
+    ],
+    ctaLabel: "Play Bot",
+    requiresBalance: false,
+  },
+  online_pro: {
+    label: "Play Online Pro",
     icon: "♛",
     accentColor: "#C9A84C",
     badge: "MOST POPULAR",
-    badgeStyle: "gold" as const, // We'll make it "gold" for now since Badge component has gold variant
+    badgeStyle: "gold",
     description: "Entry fee · ELO rated · Real earnings",
     features: [
       "Matched within ±200 ELO",
@@ -56,17 +71,6 @@ export const GAME_MODES: Record<string, GameMode> = {
     ],
     ctaLabel: "Enter Match",
     requiresBalance: true,
-    stakeTiers: [100, 300, 500, 1000], // cents
-  },
-  tournament: {
-    label: "Tournament",
-    icon: "🏆",
-    accentColor: "#A855F7",
-    badge: "SCHEDULED",
-    badgeStyle: "neutral" as const, // Using neutral since we don't have a purple badge yet
-    description: "Entry fee · Multi-player · Prize pool",
-    features: [],
-    ctaLabel: "View All Tournaments",
-    requiresBalance: true,
+    stakeTiers: [100, 300, 500, 1000], // crowns
   },
 };

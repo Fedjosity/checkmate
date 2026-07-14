@@ -3,7 +3,7 @@ import { Rank } from '@checkmate/shared-types';
 export interface QueueEntry {
   uid: string;
   socketId: string;
-  mode: 'friendly' | 'competitive' | 'paid';
+  mode: 'friendly' | 'competitive' | 'paid' | 'play_online';
   timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic';
   stakeAmountCrowns: number;
   elo: number;
@@ -55,8 +55,9 @@ export const scanForMatch = (entry: QueueEntry): QueueEntry | null => {
       candidate.timeControl === entry.timeControl &&
       candidate.stakeAmountCrowns === entry.stakeAmountCrowns
     ) {
-      // ELO within +/- 200
-      if (Math.abs(candidate.elo - entry.elo) <= 200) {
+      // ELO within +/- 200 (or +/- 300 for play_online)
+      const eloRange = entry.mode === 'play_online' ? 300 : 200;
+      if (Math.abs(candidate.elo - entry.elo) <= eloRange) {
         if (!bestMatch || candidate.joinedAt < bestMatch.joinedAt) {
           bestMatch = candidate;
         }

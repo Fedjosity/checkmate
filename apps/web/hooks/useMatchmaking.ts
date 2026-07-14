@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { getSocket } from '../lib/socket/client';
 import { joinMatchmaking, leaveMatchmaking } from '../lib/api/matchmaking';
+import { createGuestSession } from '../lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Rank } from '@checkmate/shared-types';
@@ -56,30 +57,59 @@ export const useMatchmaking = () => {
   }, [user, router]);
 
   const joinQueue = useCallback(async (
-    mode: 'friendly' | 'competitive' | 'paid',
+    mode: 'play_online' | 'competitive' | 'online_pro',
     timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic',
     stakeAmountCrowns: number
   ) => {
-    if (!user) return;
     try {
       setState('searching'); // optimistic
-      await joinMatchmaking({ mode, timeControl, stakeAmountCrowns });
+      let guestId = undefined;
+
+      if (!user) {
+        if (mode !== 'play_online') {
+          throw new Error('You must be logged in to play this mode.');
+        }
+        
+        // Check local storage for existing guest session
+        const existingGuest = localStorage.getItem('checkmate_guest');
+        if (existingGuest) {
+          const guestData = JSON.parse(existingGuest);
+          if (new Date(guestData.expiresAt) > new Date()) {
+            guestId = guestData.guestId;
+          }
+        }
+
+        if (!guestId) {
+          const newGuest = await createGuestSession();
+          guestId = newGuest.guestId;
+          localStorage.setItem('checkmate_guest', JSON.stringify(newGuest));
+        }
+      }
+
+      await joinMatchmaking({ mode, timeControl, stakeAmountCrowns }, guestId);
       
       const socket = getSocket();
-      socket.emit('matchmaking:join', { uid: user.uid });
+      socket.emit('matchmaking:join', { uid: guestId || user?.uid }); // Backend uses handshake uid or session, but we can pass it here too
     } catch (error: any) {
       setState('idle');
-      toast.error(error.response?.data?.error || 'Failed to join queue');
+      toast.error(error.message || error.response?.data?.error || 'Failed to join queue');
     }
   }, [user]);
 
   const leaveQueue = useCallback(async () => {
-    if (!user) return;
     try {
-      await leaveMatchmaking();
+      let guestId = undefined;
+      if (!user) {
+        const existingGuest = localStorage.getItem('checkmate_guest');
+        if (existingGuest) {
+          guestId = JSON.parse(existingGuest).guestId;
+        }
+      }
+      
+      await leaveMatchmaking(guestId);
       
       const socket = getSocket();
-      socket.emit('matchmaking:leave', { uid: user.uid });
+      socket.emit('matchmaking:leave', { uid: guestId || user?.uid });
       setState('idle');
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to leave queue');

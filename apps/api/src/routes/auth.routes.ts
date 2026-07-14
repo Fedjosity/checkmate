@@ -5,6 +5,8 @@ import { emailService } from '../services/email/email.service';
 import { emailVerificationTemplate } from '../templates/emailVerification.template';
 import { logger } from '../utils/logger';
 import { success, error } from '../utils/response';
+import { guestSessionService } from '../services/guestSession.service';
+import rateLimit from 'express-rate-limit';
 import * as admin from 'firebase-admin';
 
 const router = Router();
@@ -38,6 +40,37 @@ const DEFAULT_ELO = {
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
+// ─── Guest session rate limiter ──────────────────────────────
+const guestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 10,
+  keyGenerator: (req: Request) => req.ip || 'unknown',
+  message: {
+    success: false,
+    message: 'Too many guest sessions created. Try again later.',
+    data: null,
+  },
+});
+
+// ─── POST /auth/guest ────────────────────────────────────────
+// Public endpoint — creates a temporary guest identity for Play Online
+router.post('/guest', guestLimiter, async (req: Request, res: Response) => {
+  try {
+    const session = guestSessionService.createGuestSession();
+    logger.info('Guest session created', { guestId: session.guestId });
+
+    res.json(success({
+      guestId: session.guestId,
+      displayName: session.displayName,
+      elo: session.elo,
+      expiresAt: session.expiresAt.toISOString(),
+    }));
+  } catch (err: any) {
+    logger.error('Failed to create guest session', { error: err.message });
+    res.status(500).json(error('Failed to create guest session'));
+  }
+});
 
 // ─── POST /auth/register ────────────────────────────────────
 router.post('/register', requireAuth, async (req: Request, res: Response) => {

@@ -62,6 +62,58 @@ export const processWin = async (params: {
   }
 };
 
+export const processDraw = async (params: {
+  gameId: string;
+  whiteUid: string;
+  blackUid: string;
+  timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic';
+  stakeAmountCrowns: number;
+}) => {
+  const { gameId, whiteUid, blackUid, timeControl, stakeAmountCrowns } = params;
+
+  // Return stakes if any
+  if (stakeAmountCrowns > 0) {
+    const { releaseEscrow } = await import('./wallet.service');
+    await releaseEscrow(whiteUid, stakeAmountCrowns, `draw_refund_${gameId}_w`);
+    await releaseEscrow(blackUid, stakeAmountCrowns, `draw_refund_${gameId}_b`);
+  }
+
+  // Update ELO & Rank (we pass white as winner, black as loser, but set isDraw: true)
+  const eloChanges = await eloService.updateAfterGame({
+    winnerUid: whiteUid,
+    loserUid: blackUid,
+    timeControl,
+    isDraw: true,
+  });
+
+  // Update Game doc status
+  await db.collection('games').doc(gameId).update({
+    status: 'completed',
+    result: 'draw',
+    resultReason: 'agreed',
+    payoutStatus: 'completed',
+    completedAt: new Date().toISOString()
+  });
+
+  // Emit game_over to both players
+  try {
+    const io = getIO();
+    if (io) {
+      io.to(`game_${gameId}`).emit('game_over', {
+        result: 'draw',
+        payout: 0,
+        eloChanges: {
+          white: eloChanges.winner,
+          black: eloChanges.loser,
+        },
+      });
+    }
+  } catch (e) {
+    console.error('Socket.io not initialized, skipping emit');
+  }
+};
+
 export const payoutService = {
   processWin,
+  processDraw,
 };

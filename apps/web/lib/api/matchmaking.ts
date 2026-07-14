@@ -13,16 +13,20 @@ export const getQueueDepths = async (): Promise<QueueDepthData[]> => {
 };
 
 export const joinMatchmaking = async (params: {
-  mode: 'friendly' | 'competitive' | 'paid';
+  mode: 'play_online' | 'competitive' | 'online_pro';
   timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic';
   stakeAmountCrowns: number;
-}): Promise<{ queued: boolean; queuePosition?: number }> => {
-  const { data } = await api.post('/v1/matchmaking/join', params);
+}, guestId?: string): Promise<{ queued: boolean; queuePosition?: number }> => {
+  const headers: any = {};
+  if (guestId) headers['X-Guest-Id'] = guestId;
+  const { data } = await api.post('/v1/matchmaking/join', params, { headers });
   return data.data;
 };
 
-export const leaveMatchmaking = async (): Promise<{ left: boolean; crownsReturned: number }> => {
-  const { data } = await api.delete('/v1/matchmaking/leave');
+export const leaveMatchmaking = async (guestId?: string): Promise<{ left: boolean; crownsReturned: number }> => {
+  const headers: any = {};
+  if (guestId) headers['X-Guest-Id'] = guestId;
+  const { data } = await api.delete('/v1/matchmaking/leave', { headers });
   return data.data;
 };
 

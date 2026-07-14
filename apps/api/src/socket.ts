@@ -1,7 +1,8 @@
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import http from 'http';
 import { env } from './config/env.config';
 import { startMatchmakingLoop, registerMatchmakingHandlers } from './socket/handlers/matchmaking.handler';
+import { registerGameHandlers } from './socket/handlers/game.handler';
 
 let io: SocketIOServer;
 let connectedCount = 0;
@@ -17,11 +18,12 @@ export const initSocket = (server: http.Server) => {
 
   startMatchmakingLoop(io);
 
-  io.on('connection', (socket) => {
+  io.on('connection', (socket: Socket) => {
     connectedCount++;
     console.log(`Socket connected: ${socket.id} (total: ${connectedCount})`);
 
     registerMatchmakingHandlers(socket);
+    registerGameHandlers(io!, socket);
 
     socket.on('disconnect', () => {
       connectedCount = Math.max(0, connectedCount - 1);

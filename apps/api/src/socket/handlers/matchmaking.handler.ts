@@ -15,15 +15,20 @@ export function startMatchmakingLoop(io: Server) {
       if (entry.status !== 'waiting') continue;
 
       const waitSeconds = (Date.now() - entry.joinedAt.getTime()) / 1000;
-      if (waitSeconds > 90) {
+      const timeoutSeconds = entry.mode === 'play_online' ? 60 : 90;
+      
+      if (waitSeconds > timeoutSeconds) {
         entry.status = 'timeout';
         matchmakingService.removeFromQueue(entry.uid);
         if (entry.stakeAmountCrowns > 0) {
           await releaseEscrow(entry.uid, entry.stakeAmountCrowns);
         }
-        io.to(entry.socketId).emit('matchmaking:timeout', {
-          message: 'No opponent found. Your Crowns have been returned.',
-        });
+        
+        const message = entry.stakeAmountCrowns > 0
+          ? 'No opponent found. Your Crowns have been returned.'
+          : 'No opponent found. Please try again.';
+          
+        io.to(entry.socketId).emit('matchmaking:timeout', { message });
         continue;
       }
 

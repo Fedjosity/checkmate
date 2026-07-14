@@ -13,3 +13,8 @@ export const verifyEmailOTP = (code: string) =>
 
 export const resendVerificationEmail = () =>
   apiClient.post('/v1/auth/resend-verification', {});
+
+export const createGuestSession = async () => {
+  const { data } = await apiClient.post('/v1/auth/guest', {});
+  return data.data; // { guestId, displayName, elo, expiresAt }
+};

@@ -7,25 +7,8 @@ import { Chess } from "chess.js";
 export function DecorativeBoard() {
   const [fen, setFen] = useState("start");
 
-  // Play a random opening sequence just for visual interest if we wanted
-  // But a static starting position with cool styling is fine too
-  useEffect(() => {
-    const game = new Chess();
-    const moves = ["e4", "e5", "Nf3", "Nc6", "Bb5", "a6", "Ba4", "Nf6", "O-O"];
-    let i = 0;
-    
-    const interval = setInterval(() => {
-      if (i < moves.length) {
-        game.move(moves[i]);
-        setFen(game.fen());
-        i++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, []);
+  // We just want an idle board at the starting position
+  // (The FEN is initialized to "start" in the useState above)
 
   return (
     <div className="relative w-full max-w-[600px] aspect-square rounded-xl overflow-hidden shadow-2xl luxury-glow">

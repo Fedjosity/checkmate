@@ -3,7 +3,7 @@ import { matchmakingService } from '../../services/matchmaking.service';
 import { gameService } from '../../services/game.service';
 import { releaseEscrow } from '../../services/wallet.service';
 import { db } from '../../config/firebase.config';
-import { rpToRank } from '@checkmate/shared-types';
+import { rpToRank, resolveTimeControl } from '@checkmate/shared-types';
 
 let scanInterval: NodeJS.Timer;
 
@@ -44,7 +44,7 @@ export function startMatchmakingLoop(io: Server) {
         gameId,
         opponentName: null as string | null,
         opponentElo: null as number | null,
-        timeControl: entry.timeControl,
+        timeControlId: entry.timeControlId,
         stakeAmountCrowns: entry.stakeAmountCrowns,
         mode: entry.mode,
       };
@@ -57,19 +57,22 @@ export function startMatchmakingLoop(io: Server) {
       const aData = playerA.data();
       const bData = playerB.data();
 
+      const tc = resolveTimeControl(entry.timeControlId);
+      const cat = tc ? tc.category : 'blitz';
+
       io.to(entry.socketId).emit('matchmaking:match_found', {
         ...matchData,
         opponentName: bData?.displayName,
-        opponentElo: bData?.elo?.[entry.timeControl],
-        opponentRank: rpToRank(bData?.elo?.[`${entry.timeControl}RP`] ?? 0, bData?.elo?.isTop500),
+        opponentElo: bData?.elo?.[cat],
+        opponentRank: rpToRank(bData?.elo?.[`${cat}RP`] ?? 0, bData?.elo?.isTop500),
         youAre: 'white', 
       });
 
       io.to(opponent.socketId).emit('matchmaking:match_found', {
         ...matchData,
         opponentName: aData?.displayName,
-        opponentElo: aData?.elo?.[entry.timeControl],
-        opponentRank: rpToRank(aData?.elo?.[`${entry.timeControl}RP`] ?? 0, aData?.elo?.isTop500),
+        opponentElo: aData?.elo?.[cat],
+        opponentRank: rpToRank(aData?.elo?.[`${cat}RP`] ?? 0, aData?.elo?.isTop500),
         youAre: 'black',
       });
 
@@ -78,9 +81,9 @@ export function startMatchmakingLoop(io: Server) {
 
       io.emit('matchmaking:queue_update', {
         mode: entry.mode,
-        timeControl: entry.timeControl,
+        timeControlId: entry.timeControlId,
         stakeAmountCrowns: entry.stakeAmountCrowns,
-        depth: matchmakingService.getQueueDepth(entry.mode, entry.timeControl, entry.stakeAmountCrowns),
+        depth: matchmakingService.getQueueDepth(entry.mode, entry.timeControlId, entry.stakeAmountCrowns),
       });
     }
   }, 2000);

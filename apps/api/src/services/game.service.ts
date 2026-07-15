@@ -2,22 +2,15 @@ import { db } from '../config/firebase.config';
 import * as admin from 'firebase-admin';
 import { QueueEntry } from './matchmaking.service';
 import { stockfishService } from './stockfish.service';
-
-export const getTimeSeconds = (timeControl: string): number => {
-  switch (timeControl) {
-    case 'bullet': return 60;
-    case 'blitz': return 300;
-    case 'rapid': return 600;
-    case 'classic': return 1800;
-    default: return 300;
-  }
-};
+import { resolveTimeControl, NO_TIMER_ID } from '@checkmate/shared-types';
 
 export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Promise<string> => {
   const isAWhite = Math.random() < 0.5;
   const whiteUid = isAWhite ? playerA.uid : playerB.uid;
   const blackUid = isAWhite ? playerB.uid : playerA.uid;
-  const timeSeconds = getTimeSeconds(playerA.timeControl);
+
+  const tc = resolveTimeControl(playerA.timeControlId);
+  if (!tc) throw new Error('PvP games require a timed time control');
 
   const gameDocRef = db.collection('games').doc();
 
@@ -25,9 +18,10 @@ export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Prom
     whiteUid,
     blackUid,
     mode: playerA.mode,
-    timeControl: playerA.timeControl,
-    timeSeconds,
-    increment: 0,
+    timeControlId: playerA.timeControlId,
+    timeControlCategory: tc.category,
+    baseTimeMs: tc.baseTimeMs,
+    incrementMs: tc.incrementMs,
     stakeAmountCrowns: playerA.stakeAmountCrowns,
     status: 'waiting',
     result: null,
@@ -35,8 +29,8 @@ export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Prom
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     pgn: '',
     moves: [],
-    whiteTimeRemainingMs: timeSeconds * 1000,
-    blackTimeRemainingMs: timeSeconds * 1000,
+    whiteTimeRemainingMs: tc.baseTimeMs,
+    blackTimeRemainingMs: tc.baseTimeMs,
     anticheat: {
       status: 'pending',
       engineCorrelation: null,
@@ -52,12 +46,14 @@ export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Prom
 
 export const createBotGame = async (params: {
   uid: string;
-  timeControl: string;
+  timeControlId: string;
   difficulty: string;
   playerColor?: 'white' | 'black' | 'random';
 }): Promise<string> => {
-  const { uid, timeControl, difficulty } = params;
-  const timeSeconds = getTimeSeconds(timeControl);
+  const { uid, timeControlId, difficulty } = params;
+
+  const tc = resolveTimeControl(timeControlId); // null for "unlimited"
+  const isUnlimited = tc === null;
 
   // Determine player color
   let playerIsWhite: boolean;
@@ -76,9 +72,11 @@ export const createBotGame = async (params: {
     blackUid: playerIsWhite ? 'bot' : uid,
     mode: 'bot',
     difficulty,
-    timeControl,
-    timeSeconds,
-    increment: 0,
+    timeControlId,
+    timeControlCategory: tc?.category ?? 'unlimited',
+    baseTimeMs: tc?.baseTimeMs ?? 0,
+    incrementMs: tc?.incrementMs ?? 0,
+    isUnlimited,
     stakeAmountCrowns: 0,
     status: 'active', // Bot games start immediately
     result: null,
@@ -86,8 +84,8 @@ export const createBotGame = async (params: {
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     pgn: '',
     moves: [],
-    whiteTimeRemainingMs: timeSeconds * 1000,
-    blackTimeRemainingMs: timeSeconds * 1000,
+    whiteTimeRemainingMs: tc?.baseTimeMs ?? 0,
+    blackTimeRemainingMs: tc?.baseTimeMs ?? 0,
     anticheat: { status: 'exempt', flagged: false },
     payoutStatus: 'exempt',
     isBot: true,
@@ -134,7 +132,7 @@ export const getGameHistory = async (uid: string, page: number = 1, limit: numbe
     ...blackSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
   ];
 
-  // Deduplicate (in case user played themselves? unlikely but safe)
+  // Deduplicate
   const seen = new Set<string>();
   const unique = allGames.filter((g: any) => {
     if (seen.has(g.id)) return false;
@@ -161,6 +159,4 @@ export const gameService = {
   createBotGame,
   getGame,
   getGameHistory,
-  getTimeSeconds,
 };
-

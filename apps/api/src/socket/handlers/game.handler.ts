@@ -13,7 +13,9 @@ interface ActiveGame {
   blackUid: string;
   isBot: boolean;
   botDifficulty?: string;
-  timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic';
+  timeControlCategory: string;
+  incrementMs: number;
+  isUnlimited: boolean;
   stakeAmountCrowns: number;
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
@@ -40,6 +42,7 @@ const startGameClock = (io: Server) => {
 
     for (const [gameId, game] of Array.from(activeGames.entries())) {
       if (game.status !== 'active') continue;
+      if (game.isUnlimited) continue; // No clock for unlimited games
 
       const activeColor = game.chess.turn() === 'w' ? 'white' : 'black';
       const elapsed = now - game.lastMoveTimestamp;
@@ -91,7 +94,7 @@ export const handleGameOver = async (gameId: string, result: 'white' | 'black' |
         gameId,
         whiteUid: game.whiteUid,
         blackUid: game.blackUid,
-        timeControl: game.timeControl,
+        timeControl: (game.timeControlCategory as 'blitz' | 'rapid' | 'bullet' | 'classic') || 'blitz',
         stakeAmountCrowns: game.stakeAmountCrowns,
       });
     } else {
@@ -101,7 +104,7 @@ export const handleGameOver = async (gameId: string, result: 'white' | 'black' |
         gameId,
         winnerUid,
         loserUid,
-        timeControl: game.timeControl,
+        timeControl: (game.timeControlCategory as 'blitz' | 'rapid' | 'bullet' | 'classic') || 'blitz',
         stakeAmountCrowns: game.stakeAmountCrowns,
       });
     }
@@ -143,7 +146,23 @@ const triggerBotMove = async (gameId: string) => {
 
     const now = Date.now();
     const elapsed = now - game.lastMoveTimestamp;
-    game.blackTimeRemainingMs -= elapsed; // Bot is always black or handles its own time
+    // Only deduct time for timed games
+    if (!game.isUnlimited) {
+      // Deduct elapsed time from bot's clock
+      if (game.chess.turn() === 'w') {
+        // Bot just moved as white... but bot is typically black
+        game.whiteTimeRemainingMs -= elapsed;
+      } else {
+        game.blackTimeRemainingMs -= elapsed;
+      }
+      // The bot made the move so the color that moved gets increment
+      const movedColor = game.chess.turn() === 'w' ? 'black' : 'white'; // turn flipped after move
+      if (movedColor === 'white') {
+        game.whiteTimeRemainingMs += game.incrementMs;
+      } else {
+        game.blackTimeRemainingMs += game.incrementMs;
+      }
+    }
     game.lastMoveTimestamp = now;
 
     const newFen = game.chess.fen();
@@ -218,7 +237,9 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
         blackUid: gData.blackUid,
         isBot: gData.isBot ?? false,
         botDifficulty: gData.botDifficulty,
-        timeControl: gData.timeControl,
+        timeControlCategory: gData.timeControlCategory ?? gData.timeControl ?? 'blitz',
+        incrementMs: gData.incrementMs ?? 0,
+        isUnlimited: gData.isUnlimited ?? false,
         stakeAmountCrowns: gData.stakeAmountCrowns ?? 0,
         whiteTimeRemainingMs: gData.whiteTimeRemainingMs,
         blackTimeRemainingMs: gData.blackTimeRemainingMs,
@@ -285,10 +306,14 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
       const now = Date.now();
       const elapsed = now - game.lastMoveTimestamp;
       
-      if (isWhite) {
-        game.whiteTimeRemainingMs -= elapsed;
-      } else {
-        game.blackTimeRemainingMs -= elapsed;
+      if (!game.isUnlimited) {
+        if (isWhite) {
+          game.whiteTimeRemainingMs -= elapsed;
+          game.whiteTimeRemainingMs += game.incrementMs; // Add increment
+        } else {
+          game.blackTimeRemainingMs -= elapsed;
+          game.blackTimeRemainingMs += game.incrementMs; // Add increment
+        }
       }
       
       game.lastMoveTimestamp = now;

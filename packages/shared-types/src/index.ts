@@ -6,3 +6,4 @@ export * from './waitlist.types';
 export * from './matchmaking.types';
 export * from './elo.types';
 export * from './rankEngine';
+export * from './timeControls';

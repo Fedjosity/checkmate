@@ -2,7 +2,7 @@ import { apiClient as api } from './client';
 
 export interface QueueDepthData {
   mode: string;
-  timeControl: string;
+  timeControlId: string;
   stakeAmountCrowns: number;
   depth: number;
 }
@@ -14,7 +14,7 @@ export const getQueueDepths = async (): Promise<QueueDepthData[]> => {
 
 export const joinMatchmaking = async (params: {
   mode: 'play_online' | 'competitive' | 'online_pro';
-  timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic';
+  timeControlId: string;
   stakeAmountCrowns: number;
 }, guestId?: string): Promise<{ queued: boolean; queuePosition?: number }> => {
   const headers: any = {};

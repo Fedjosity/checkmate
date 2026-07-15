@@ -58,7 +58,7 @@ export const useMatchmaking = () => {
 
   const joinQueue = useCallback(async (
     mode: 'play_online' | 'competitive' | 'online_pro',
-    timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic',
+    timeControlId: string,
     stakeAmountCrowns: number
   ) => {
     try {
@@ -86,7 +86,7 @@ export const useMatchmaking = () => {
         }
       }
 
-      await joinMatchmaking({ mode, timeControl, stakeAmountCrowns }, guestId);
+      await joinMatchmaking({ mode, timeControlId, stakeAmountCrowns }, guestId);
       
       const socket = getSocket();
       socket.emit('matchmaking:join', { uid: guestId || user?.uid }); // Backend uses handshake uid or session, but we can pass it here too

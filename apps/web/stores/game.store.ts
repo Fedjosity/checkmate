@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getSocket } from '@/lib/socket/client';
 import { Chess } from 'chess.js';
+import { playMoveSound, playCaptureSound, playCheckSound, playGameStartSound, playGameEndSound } from '@/lib/sounds';
 
 interface GameState {
   gameId: string | null;
@@ -14,6 +15,7 @@ interface GameState {
   payout: number;
   eloChanges: any;
   error: string | null;
+  lastMove: { from: string; to: string } | null;
   
   // Actions
   joinGame: (gameId: string, uid: string) => void;
@@ -39,6 +41,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   payout: 0,
   eloChanges: null,
   error: null,
+  lastMove: null,
 
   joinGame: (gameId: string, uid: string) => {
     const socket = getSocket();
@@ -47,15 +50,36 @@ export const useGameStore = create<GameState>((set, get) => ({
     socket.emit('game:join', { gameId, uid });
 
     socket.on('game:start', (data) => {
+      playGameStartSound();
       set({ status: 'active', fen: data.fen });
     });
 
     socket.on('game:move', (data) => {
+      let lastMove = null;
+      try {
+        const chess = new Chess();
+        chess.loadPgn(data.pgn);
+        const history = chess.history({ verbose: true });
+        if (history.length > 0) {
+          const last = history[history.length - 1];
+          lastMove = { from: last.from, to: last.to };
+          
+          if (chess.isCheck() || chess.isCheckmate()) {
+            playCheckSound();
+          } else if (last.captured) {
+            playCaptureSound();
+          } else {
+            playMoveSound();
+          }
+        }
+      } catch (e) {}
+
       set({ 
         fen: data.fen, 
         pgn: data.pgn,
         whiteTimeRemainingMs: data.whiteTimeRemainingMs,
         blackTimeRemainingMs: data.blackTimeRemainingMs,
+        lastMove,
       });
     });
 
@@ -67,6 +91,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     socket.on('game:over', (data) => {
+      playGameEndSound();
       set({ 
         status: 'completed', 
         result: data.result || data.winner, // backend might send winner or result
@@ -101,7 +126,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const moveObj = chess.move(move);
       if (moveObj) {
-        set({ fen: chess.fen(), pgn: chess.pgn() });
+        if (chess.isCheck() || chess.isCheckmate()) {
+          playCheckSound();
+        } else if (moveObj.captured) {
+          playCaptureSound();
+        } else {
+          playMoveSound();
+        }
+        
+        set({ 
+          fen: chess.fen(), 
+          pgn: chess.pgn(),
+          lastMove: { from: moveObj.from, to: moveObj.to }
+        });
         const socket = getSocket();
         socket.emit('game:move', { gameId, uid, move });
       }

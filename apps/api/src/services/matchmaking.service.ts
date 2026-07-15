@@ -3,8 +3,8 @@ import { Rank } from '@checkmate/shared-types';
 export interface QueueEntry {
   uid: string;
   socketId: string;
-  mode: 'friendly' | 'competitive' | 'paid' | 'play_online';
-  timeControl: 'blitz' | 'rapid' | 'bullet' | 'classic';
+  mode: 'friendly' | 'competitive' | 'paid' | 'play_online' | 'online_pro';
+  timeControlId: string;
   stakeAmountCrowns: number;
   elo: number;
   rank: Rank;
@@ -28,14 +28,14 @@ export const removeFromQueue = (uid: string): QueueEntry | undefined => {
 
 export const getQueueDepth = (
   mode: string,
-  timeControl: string,
+  timeControlId: string,
   stakeAmountCrowns: number
 ): number => {
   let count = 0;
   for (const entry of Array.from(queue.values())) {
     if (
       entry.mode === mode &&
-      entry.timeControl === timeControl &&
+      entry.timeControlId === timeControlId &&
       entry.stakeAmountCrowns === stakeAmountCrowns
     ) {
       count++;
@@ -52,7 +52,7 @@ export const scanForMatch = (entry: QueueEntry): QueueEntry | null => {
       candidate.uid !== entry.uid &&
       candidate.status === 'waiting' &&
       candidate.mode === entry.mode &&
-      candidate.timeControl === entry.timeControl &&
+      candidate.timeControlId === entry.timeControlId &&
       candidate.stakeAmountCrowns === entry.stakeAmountCrowns
     ) {
       // ELO within +/- 200 (or +/- 300 for play_online)

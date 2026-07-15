@@ -2,11 +2,11 @@ import { Request, Response } from 'express';
 import { db } from '../config/firebase.config';
 import { matchmakingService } from '../services/matchmaking.service';
 import { escrowCrowns, releaseEscrow } from '../services/wallet.service';
-import { rpToRank } from '@checkmate/shared-types';
+import { rpToRank, resolveTimeControl } from '@checkmate/shared-types';
 
 export const joinLobby = async (req: Request, res: Response) => {
   try {
-    const { mode, timeControl, stakeAmountCrowns } = req.body;
+    const { mode, timeControlId, stakeAmountCrowns } = req.body;
     const uid = (req as any).user.uid;
 
     if (matchmakingService.getEntry(uid)) {
@@ -20,15 +20,17 @@ export const joinLobby = async (req: Request, res: Response) => {
 
     const userDoc = await db.collection('users').doc(uid).get();
     const userData = userDoc.data()!;
-    const elo = userData.elo?.[timeControl] ?? 1200;
-    const rp = userData.elo?.[`${timeControl}RP`] ?? 0;
+    const tc = resolveTimeControl(timeControlId);
+    const cat = tc ? tc.category : 'blitz';
+    const elo = userData.elo?.[cat] ?? 1200;
+    const rp = userData.elo?.[`${cat}RP`] ?? 0;
     const rank = rpToRank(rp, userData.elo?.isTop500);
 
     matchmakingService.addToQueue({
       uid,
       socketId: '',
       mode,
-      timeControl,
+      timeControlId,
       stakeAmountCrowns: mode === 'paid' ? stakeAmountCrowns : 0,
       elo,
       rank,
@@ -64,16 +66,16 @@ export const getQueueDepths = async (req: Request, res: Response) => {
 
     for (const entry of entries) {
       if (entry.status === 'waiting') {
-        const key = `${entry.mode}_${entry.timeControl}_${entry.stakeAmountCrowns}`;
+        const key = `${entry.mode}_${entry.timeControlId}_${entry.stakeAmountCrowns}`;
         depthsMap.set(key, (depthsMap.get(key) || 0) + 1);
       }
     }
 
     const depthsArray = Array.from(depthsMap.entries()).map(([key, depth]) => {
-      const [mode, timeControl, stake] = key.split('_');
+      const [mode, timeControlId, stake] = key.split('_');
       return {
         mode,
-        timeControl,
+        timeControlId,
         stakeAmountCrowns: Number(stake),
         depth,
       };

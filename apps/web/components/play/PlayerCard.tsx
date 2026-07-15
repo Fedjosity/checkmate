@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils/cn";
 import Image from "next/image";
+import { playLowTimeSound } from "@/lib/sounds";
+
+import { CapturedPieces } from "./CapturedPieces";
 
 interface PlayerCardProps {
   uid: string;
@@ -24,7 +27,20 @@ export function PlayerCard({ uid, name, elo, timeRemainingMs, isActive, color, i
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const isLowTime = timeRemainingMs < 10000 && timeRemainingMs > 0;
+  const isLowTime = timeRemainingMs <= 10000 && timeRemainingMs > 0;
+  const lastSecondRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isActive && isLowTime) {
+      const currentSecond = Math.floor(timeRemainingMs / 1000);
+      if (lastSecondRef.current !== currentSecond) {
+        lastSecondRef.current = currentSecond;
+        playLowTimeSound();
+      }
+    } else if (!isLowTime) {
+      lastSecondRef.current = null;
+    }
+  }, [timeRemainingMs, isActive, isLowTime]);
 
   return (
     <div className={cn(
@@ -34,7 +50,7 @@ export function PlayerCard({ uid, name, elo, timeRemainingMs, isActive, color, i
         : "bg-surface border-border/50 opacity-80"
     )}>
       <div className="flex items-center gap-4">
-        <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-border/50 bg-black/50">
+        <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-border/50 bg-black/50 shrink-0">
           {isBot ? (
             <div className="w-full h-full flex items-center justify-center text-2xl">🤖</div>
           ) : (
@@ -46,15 +62,18 @@ export function PlayerCard({ uid, name, elo, timeRemainingMs, isActive, color, i
             />
           )}
         </div>
-        <div>
+        <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <h3 className="font-headline text-white font-medium">{name}</h3>
             {color === 'white' 
-              ? <div className="w-3 h-3 rounded-sm bg-white border border-border/50" />
-              : <div className="w-3 h-3 rounded-sm bg-[#1A1A1A] border border-border/50" />
+              ? <div className="w-3 h-3 rounded-sm bg-white border border-border/50 shrink-0" />
+              : <div className="w-3 h-3 rounded-sm bg-[#1A1A1A] border border-border/50 shrink-0" />
             }
           </div>
-          {elo && <div className="text-sm text-on-surface-variant font-stats-mono">ELO {elo}</div>}
+          <div className="flex items-center gap-3">
+            {elo && <div className="text-sm text-on-surface-variant font-stats-mono leading-none">ELO {elo}</div>}
+            <CapturedPieces color={color} />
+          </div>
         </div>
       </div>
 

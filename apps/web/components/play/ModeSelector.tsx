@@ -10,16 +10,17 @@ import { Badge } from "@/components/ui/Badge";
 import { createBotGame } from "@/lib/api/games";
 import { cn } from "@/lib/utils/cn";
 import { toast } from "sonner";
-
-const TIME_CONTROLS = [
-  { id: "bullet", label: "Bullet", desc: "1+0" },
-  { id: "blitz", label: "Blitz", desc: "3+2" },
-  { id: "rapid", label: "Rapid", desc: "10+0" },
-  { id: "classic", label: "Classic", desc: "30+0" },
-];
+import { TIME_CONTROL_PRESETS, NO_TIMER_ID } from "@checkmate/shared-types";
 
 const BOT_DIFFICULTIES = ["novice", "casual", "intermediate", "advanced", "grandmaster"];
 const BOT_COLORS = ["random", "white", "black"];
+
+// Group presets for display
+const groupedPresets = {
+  Bullet: TIME_CONTROL_PRESETS.filter(tc => tc.category === 'bullet'),
+  Blitz: TIME_CONTROL_PRESETS.filter(tc => tc.category === 'blitz'),
+  Rapid: TIME_CONTROL_PRESETS.filter(tc => tc.category === 'rapid'),
+};
 
 export function ModeSelector() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function ModeSelector() {
   const { joinQueue } = useMatchmaking();
 
   const [expandedMode, setExpandedMode] = useState<string>("play_online");
-  const [timeControl, setTimeControl] = useState<string>("blitz");
+  const [timeControlId, setTimeControlId] = useState<string>("3+2");
   
   // Bot specific state
   const [botDifficulty, setBotDifficulty] = useState<string>("casual");
@@ -55,7 +56,7 @@ export function ModeSelector() {
     if (modeKey === "bot") {
       try {
         setIsStartingBot(true);
-        const { gameId } = await createBotGame(botDifficulty, timeControl, botColor);
+        const { gameId } = await createBotGame(botDifficulty, timeControlId, botColor);
         router.push(`/game/${gameId}`);
       } catch (err: any) {
         toast.error(err.message || "Failed to start bot game");
@@ -74,7 +75,13 @@ export function ModeSelector() {
       }
     }
 
-    joinQueue(modeKey as any, timeControl as any, finalStake);
+    // Protect against 'unlimited' time control for PvP
+    if (timeControlId === NO_TIMER_ID) {
+      toast.error("No Timer is only available for bot games.");
+      return;
+    }
+
+    joinQueue(modeKey as any, timeControlId, finalStake);
   };
 
   return (
@@ -129,21 +136,47 @@ export function ModeSelector() {
                   <label className="text-xs font-label-caps text-on-surface-variant mb-3 block">
                     Time Control
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {TIME_CONTROLS.map(tc => (
-                      <button
-                        key={tc.id}
-                        onClick={() => setTimeControl(tc.id)}
-                        className={cn(
-                          "px-4 py-2 rounded-lg border text-sm font-medium transition-colors",
-                          timeControl === tc.id
-                            ? "bg-white/10 border-white/20 text-white"
-                            : "bg-transparent border-border/50 text-muted hover:border-white/20 hover:text-white"
-                        )}
-                      >
-                        {tc.label} <span className="opacity-50 ml-1">{tc.desc}</span>
-                      </button>
+                  
+                  <div className="flex flex-col gap-4">
+                    {Object.entries(groupedPresets).map(([groupName, presets]) => (
+                      <div key={groupName} className="flex items-center gap-3">
+                        <span className="w-12 text-xs text-on-surface-variant font-medium">{groupName}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {presets.map(tc => (
+                            <button
+                              key={tc.id}
+                              onClick={() => setTimeControlId(tc.id)}
+                              className={cn(
+                                "px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors",
+                                timeControlId === tc.id
+                                  ? "bg-white/10 border-white/20 text-white"
+                                  : "bg-transparent border-border/50 text-muted hover:border-white/20 hover:text-white"
+                              )}
+                            >
+                              {tc.id}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
+
+                    {/* Bot only option */}
+                    {key === "bot" && (
+                      <div className="flex items-center gap-3 pt-2 border-t border-border/20">
+                        <span className="w-12 text-xs text-on-surface-variant font-medium">Other</span>
+                        <button
+                          onClick={() => setTimeControlId(NO_TIMER_ID)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors",
+                            timeControlId === NO_TIMER_ID
+                              ? "bg-white/10 border-white/20 text-white"
+                              : "bg-transparent border-border/50 text-muted hover:border-white/20 hover:text-white"
+                          )}
+                        >
+                          No Timer
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

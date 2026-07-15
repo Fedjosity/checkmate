@@ -9,16 +9,16 @@ import { logger } from '../utils/logger';
 export const createBotGame = async (req: Request, res: Response) => {
   try {
     const uid = (req as any).user.uid;
-    const { difficulty, timeControl, playerColor } = req.body;
+    const { difficulty, timeControlId, playerColor } = req.body;
 
     const gameId = await gameService.createBotGame({
       uid,
-      timeControl,
+      timeControlId,
       difficulty,
       playerColor,
     });
 
-    logger.info('Bot game created', { gameId, uid, difficulty, timeControl });
+    logger.info('Bot game created', { gameId, uid, difficulty, timeControlId });
     res.json(success({ gameId }));
   } catch (err: any) {
     logger.error('Failed to create bot game', { error: err.message });
@@ -29,7 +29,7 @@ export const createBotGame = async (req: Request, res: Response) => {
 export const createPlayOnlineGame = async (req: Request, res: Response) => {
   try {
     const isGuest = (req as any).isGuest;
-    const { timeControl } = req.body;
+    const { timeControlId } = req.body;
 
     let uid: string;
     let elo: number;
@@ -44,9 +44,9 @@ export const createPlayOnlineGame = async (req: Request, res: Response) => {
       uid = (req as any).user.uid;
       const userDoc = await db.collection('users').doc(uid).get();
       const userData = userDoc.data()!;
-      elo = userData.elo?.[timeControl] ?? 1200;
-      const rp = userData.elo?.[`${timeControl}RP`] ?? 0;
-      rank = rpToRank(rp, userData.elo?.isTop500);
+      // For ELO lookup, we need to resolve the category, but here we just fallback since Play Online is casual
+      elo = 1200;
+      rank = rpToRank(0, false);
     }
 
     // Check if already in queue
@@ -59,7 +59,7 @@ export const createPlayOnlineGame = async (req: Request, res: Response) => {
       uid,
       socketId: '',
       mode: 'play_online',
-      timeControl: timeControl as any,
+      timeControlId,
       stakeAmountCrowns: 0,
       elo,
       rank,

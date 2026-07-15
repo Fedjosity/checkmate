@@ -15,11 +15,11 @@ export const useQueueDepths = () => {
 
     const socket = getSocket();
 
-    const onUpdate = (data: { mode: string; timeControl: string; stakeAmountCrowns: number; depth: number }) => {
+    const onUpdate = (data: { mode: string; timeControlId: string; stakeAmountCrowns: number; depth: number }) => {
       setDepths(prev => {
         const existing = prev.findIndex(d => 
           d.mode === data.mode && 
-          d.timeControl === data.timeControl && 
+          d.timeControlId === data.timeControlId && 
           d.stakeAmountCrowns === data.stakeAmountCrowns
         );
         
@@ -41,10 +41,10 @@ export const useQueueDepths = () => {
     };
   }, []);
 
-  const getDepth = (mode: string, timeControl: string, stakeAmountCrowns: number) => {
+  const getDepth = (mode: string, timeControlId: string, stakeAmountCrowns: number) => {
     const entry = depths.find(d => 
       d.mode === mode && 
-      d.timeControl === timeControl && 
+      d.timeControlId === timeControlId && 
       d.stakeAmountCrowns === stakeAmountCrowns
     );
     return entry?.depth || 0;

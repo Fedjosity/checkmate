@@ -12,17 +12,17 @@ export interface GameInfo {
   createdAt: { _seconds: number; _nanoseconds: number };
 }
 
-export const createBotGame = async (difficulty: string, timeControl: string, playerColor: string = 'random') => {
-  const { data } = await api.post('/games/bot', { difficulty, timeControl, playerColor });
+export const createBotGame = async (difficulty: string, timeControlId: string, playerColor: string = 'random') => {
+  const { data } = await api.post('/games/bot', { difficulty, timeControlId, playerColor });
   return data.data; // { gameId: string }
 };
 
-export const createPlayOnlineGame = async (timeControl: string, guestId?: string) => {
+export const createPlayOnlineGame = async (timeControlId: string, guestId?: string) => {
   const headers: any = {};
   if (guestId) {
     headers['X-Guest-Id'] = guestId;
   }
-  const { data } = await api.post('/games/online', { timeControl }, { headers });
+  const { data } = await api.post('/games/online', { timeControlId }, { headers });
   return data.data; // { queued: true }
 };
 

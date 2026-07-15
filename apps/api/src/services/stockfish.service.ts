@@ -40,9 +40,13 @@ export async function createInstance(gameId: string, difficulty: string): Promis
   // TODO: Switch to native stockfish binary for production (faster, lower memory)
   let stockfishPath: string;
   try {
-    stockfishPath = process.env.STOCKFISH_PATH || require.resolve('stockfish/src/stockfish.js');
+    stockfishPath = process.env.STOCKFISH_PATH || require.resolve('stockfish/bin/stockfish-18-single.js');
   } catch {
-    stockfishPath = './node_modules/stockfish/src/stockfish.js';
+    try {
+      stockfishPath = require.resolve('stockfish/bin/stockfish-18-asm.js');
+    } catch {
+      stockfishPath = './node_modules/stockfish/bin/stockfish-18-single.js';
+    }
   }
 
   const proc = spawn('node', [stockfishPath], {

@@ -17,7 +17,7 @@ export function DecorativeBoard() {
       <Chessboard 
         position={fen} 
         arePiecesDraggable={false}
-        customDarkSquareStyle={{ backgroundColor: "#0D1017" }}
+        customDarkSquareStyle={{ backgroundColor: "#3D3528" }}
         customLightSquareStyle={{ backgroundColor: "rgba(201, 168, 76, 0.85)" }}
         customBoardStyle={{
           borderRadius: '12px',

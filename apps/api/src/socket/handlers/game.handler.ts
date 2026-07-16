@@ -148,18 +148,14 @@ const triggerBotMove = async (gameId: string) => {
     const elapsed = now - game.lastMoveTimestamp;
     // Only deduct time for timed games
     if (!game.isUnlimited) {
-      // Deduct elapsed time from bot's clock
-      if (game.chess.turn() === 'w') {
-        // Bot just moved as white... but bot is typically black
-        game.whiteTimeRemainingMs -= elapsed;
-      } else {
-        game.blackTimeRemainingMs -= elapsed;
-      }
-      // The bot made the move so the color that moved gets increment
+      // The bot made the move so the color that moved gets elapsed deducted and increment added
       const movedColor = game.chess.turn() === 'w' ? 'black' : 'white'; // turn flipped after move
+      
       if (movedColor === 'white') {
+        game.whiteTimeRemainingMs -= elapsed;
         game.whiteTimeRemainingMs += game.incrementMs;
       } else {
+        game.blackTimeRemainingMs -= elapsed;
         game.blackTimeRemainingMs += game.incrementMs;
       }
     }
@@ -171,6 +167,7 @@ const triggerBotMove = async (gameId: string) => {
     await db.collection('games').doc(gameId).update({
       fen: newFen,
       pgn: newPgn,
+      whiteTimeRemainingMs: game.whiteTimeRemainingMs,
       blackTimeRemainingMs: game.blackTimeRemainingMs,
     });
 

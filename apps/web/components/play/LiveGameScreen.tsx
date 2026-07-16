@@ -46,6 +46,7 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
   const [boardWidth, setBoardWidth] = useState(600);
   const [moveSquares, setMoveSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
+  const [moveFrom, setMoveFrom] = useState<string | null>(null);
 
   useEffect(() => {
     if (!uid) {
@@ -93,7 +94,7 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
 
   const getMoveOptions = (square: string) => {
     try {
-      const chess = new Chess(fen);
+      const chess = new Chess(fen === 'start' ? undefined : fen);
       const moves = chess.moves({
         square: square as any,
         verbose: true
@@ -132,20 +133,44 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
 
   const onSquareClick = (square: string) => {
     if (status !== 'active') return;
-    const chess = new Chess(fen);
+    const chess = new Chess(fen === 'start' ? undefined : fen);
     const piece = chess.get(square as any);
-    
+
+    // If we have a square selected, try to move there
+    if (moveFrom) {
+      // If we clicked our own piece again, just re-select it
+      if (piece && ((playerColor === 'white' && piece.color === 'w') || (playerColor === 'black' && piece.color === 'b'))) {
+        setMoveFrom(square);
+        getMoveOptions(square);
+        return;
+      }
+      
+      const moveString = moveFrom + square + (chess.get(moveFrom as any)?.type === 'p' && (square[1] === '1' || square[1] === '8') ? 'q' : '');
+      const isLegal = chess.moves({ verbose: true }).find((m: any) => m.from === moveFrom && m.to === square);
+
+      if (isLegal && uid) {
+        makeMove(moveString, uid);
+        setMoveFrom(null);
+        setOptionSquares({});
+      } else {
+        setMoveFrom(null);
+        setOptionSquares({});
+      }
+      return;
+    }
+
+    // No square selected yet
     if (piece && ((playerColor === 'white' && piece.color === 'w') || (playerColor === 'black' && piece.color === 'b'))) {
+      setMoveFrom(square);
       getMoveOptions(square);
     } else {
-      // If we clicked a dot, maybe we should move, but react-chessboard handles clicks on customSquareStyles 
-      // differently if we don't track source square. For now, rely on drag and drop.
       setOptionSquares({});
     }
   };
 
   const onDrop = (sourceSquare: string, targetSquare: string, piece: string) => {
     setOptionSquares({});
+    setMoveFrom(null);
     if (status !== 'active') return false;
     
     const move = sourceSquare + targetSquare + (piece[1] === 'P' && (targetSquare[1] === '1' || targetSquare[1] === '8') ? 'q' : '');
@@ -156,12 +181,37 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
     return true; // react-chessboard will optimistically update if we return true
   };
 
+  const checkSquareStyles = useMemo(() => {
+    try {
+      const chess = new Chess(fen === 'start' ? undefined : fen);
+      if (chess.inCheck()) {
+        const turnColor = chess.turn(); // 'w' or 'b'
+      // Find the king's square
+      const board = chess.board();
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          const piece = board[i][j];
+          if (piece && piece.type === 'k' && piece.color === turnColor) {
+            return {
+              [piece.square]: {
+                background: "radial-gradient(circle, rgba(255,0,0,.6) 10%, rgba(255,0,0,0) 80%)",
+                boxShadow: "inset 0 0 15px rgba(255, 0, 0, 0.5)",
+              }
+            };
+          }
+        }
+      }
+      }
+    } catch (e) {
+      // Ignore invalid FEN errors during intermediate states
+    }
+    return {};
+  }, [fen]);
+
   if (!uid || !playerColor) return <div className="text-white text-center mt-20">Authenticating...</div>;
 
-
-
   return (
-    <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-8 min-h-screen p-4 md:p-8 bg-background relative overflow-hidden">
+    <div className="flex flex-col xl:flex-row items-center xl:items-stretch justify-center gap-4 lg:gap-8 min-h-screen p-2 sm:p-4 md:p-8 bg-background relative overflow-hidden">
       {/* Background glow effects */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] max-w-[1000px] max-h-[1000px] bg-gold/5 rounded-full blur-[100px] pointer-events-none" />
 
@@ -207,8 +257,9 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
             onSquareClick={onSquareClick}
             onPieceDragBegin={onPieceDragBegin}
             onPieceDragEnd={() => setOptionSquares({})}
+            isDraggablePiece={({ piece }) => piece.startsWith(playerColor === 'white' ? 'w' : 'b')}
             boardOrientation={playerColor as 'white' | 'black'}
-            customDarkSquareStyle={{ backgroundColor: "#0D1017" }}
+            customDarkSquareStyle={{ backgroundColor: "#3D3528" }}
             customLightSquareStyle={{ backgroundColor: "rgba(201, 168, 76, 0.85)" }}
             customBoardStyle={{
               borderRadius: '8px',
@@ -217,6 +268,7 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
             customSquareStyles={{
               ...moveSquares,
               ...optionSquares,
+              ...checkSquareStyles,
             }}
             showBoardNotation={true}
             animationDuration={200}
@@ -239,8 +291,8 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
       </div>
 
       {/* Right Column: Move History & Controls */}
-      <div className="w-full lg:w-[320px] flex flex-col gap-4 h-full max-h-[800px] z-10 self-stretch lg:self-center shrink-0">
-        <div className="flex-1 min-h-[300px]">
+      <div className="w-full xl:w-[320px] flex flex-col gap-4 max-h-[400px] xl:max-h-[800px] z-10 self-stretch xl:self-center shrink-0">
+        <div className="flex-1 min-h-[200px] xl:min-h-[300px]">
           <MoveHistory />
         </div>
         <GameControls 

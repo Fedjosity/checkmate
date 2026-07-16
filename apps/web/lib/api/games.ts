@@ -13,7 +13,7 @@ export interface GameInfo {
 }
 
 export const createBotGame = async (difficulty: string, timeControlId: string, playerColor: string = 'random') => {
-  const { data } = await api.post('/v1/games/bot', { difficulty, timeControlId, playerColor });
+  const data: any = await api.post('/v1/games/bot', { difficulty, timeControlId, playerColor });
   return data.data; // { gameId: string }
 };
 
@@ -22,7 +22,7 @@ export const createPlayOnlineGame = async (timeControlId: string, guestId?: stri
   if (guestId) {
     headers['X-Guest-Id'] = guestId;
   }
-  const { data } = await api.post('/v1/games/online', { timeControlId }, { headers });
+  const data: any = await api.post('/v1/games/online', { timeControlId }, { headers });
   return data.data; // { queued: true }
 };
 
@@ -31,11 +31,11 @@ export const getGame = async (gameId: string, guestId?: string) => {
   if (guestId) {
     headers['X-Guest-Id'] = guestId;
   }
-  const { data } = await api.get(`/v1/games/${gameId}`, { headers });
+  const data: any = await api.get(`/v1/games/${gameId}`, { headers });
   return data.data.game;
 };
 
 export const getGameHistory = async (page: number = 1, limit: number = 20) => {
-  const { data } = await api.get(`/v1/games/history?page=${page}&limit=${limit}`);
+  const data: any = await api.get(`/v1/games/history?page=${page}&limit=${limit}`);
   return data.data; // { games: GameInfo[], total: number, page: number }
 };

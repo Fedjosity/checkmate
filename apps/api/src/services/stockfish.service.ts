@@ -65,16 +65,14 @@ export async function createInstance(gameId: string, difficulty: string): Promis
   // Wait for UCI initialization
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Stockfish init timeout')), 10000);
+    let outputBuffer = '';
 
     const onData = (data: Buffer) => {
-      const lines = data.toString().split('\n');
-      for (const line of lines) {
-        if (line.trim() === 'uciok') {
-          clearTimeout(timeout);
-          proc.stdout?.removeListener('data', onData);
-          resolve();
-          return;
-        }
+      outputBuffer += data.toString();
+      if (outputBuffer.includes('uciok')) {
+        clearTimeout(timeout);
+        proc.stdout?.removeListener('data', onData);
+        resolve();
       }
     };
 
@@ -109,9 +107,11 @@ export async function getBestMove(gameId: string, fen: string): Promise<string> 
 
   const move = await new Promise<string>((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Stockfish move timeout')), 30000);
+    let outputBuffer = '';
 
     const onData = (data: Buffer) => {
-      const lines = data.toString().split('\n');
+      outputBuffer += data.toString();
+      const lines = outputBuffer.split('\n');
       for (const line of lines) {
         if (line.startsWith('bestmove')) {
           clearTimeout(timeout);
@@ -150,6 +150,10 @@ export function destroyInstance(gameId: string): void {
   logger.info(`Stockfish instance destroyed for ${gameId}`);
 }
 
+export function hasInstance(gameId: string): boolean {
+  return instances.has(gameId);
+}
+
 export function destroyAll(): void {
   for (const gameId of Array.from(instances.keys())) {
     destroyInstance(gameId);
@@ -161,4 +165,5 @@ export const stockfishService = {
   getBestMove,
   destroyInstance,
   destroyAll,
+  hasInstance,
 };

@@ -283,6 +283,27 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
       } else if (game.isBot && game.whiteUid === 'bot' && game.chess.turn() === 'w') {
         triggerBotMove(gameId);
       }
+    } else if (game.status === 'active') {
+      // Handle reconnects to an already active game
+      socket.emit('game:start', { fen: game.chess.fen() });
+      socket.emit('game:clock_sync', {
+        whiteTimeRemainingMs: game.whiteTimeRemainingMs,
+        blackTimeRemainingMs: game.blackTimeRemainingMs,
+      });
+
+      if (game.isBot) {
+        // Ensure Stockfish instance exists (in case of backend restart)
+        if (!stockfishService.hasInstance(gameId)) {
+          await stockfishService.createInstance(gameId, game.botDifficulty || 'casual');
+        }
+        
+        // Trigger bot if it's supposed to move
+        if (game.blackUid === 'bot' && game.chess.turn() === 'b') {
+          triggerBotMove(gameId);
+        } else if (game.whiteUid === 'bot' && game.chess.turn() === 'w') {
+          triggerBotMove(gameId);
+        }
+      }
     }
   });
 

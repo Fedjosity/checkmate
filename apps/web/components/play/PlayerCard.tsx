@@ -54,11 +54,10 @@ export function PlayerCard({ uid, name, elo, timeRemainingMs, isActive, color, i
           {isBot ? (
             <div className="w-full h-full flex items-center justify-center text-2xl">🤖</div>
           ) : (
-            <Image 
+            <img 
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`}
               alt={name}
-              fill
-              className="object-cover"
+              className="w-full h-full object-cover"
             />
           )}
         </div>

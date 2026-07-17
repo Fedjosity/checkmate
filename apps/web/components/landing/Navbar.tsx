@@ -11,7 +11,7 @@ export const Navbar = () => {
   const { user } = useAuth();
 
   return (
-    <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-3 max-w-none bg-background/90 backdrop-blur-md border-b border-white/5">
+    <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-3 max-w-none bg-background md:bg-background/90 md:backdrop-blur-md border-b border-white/5 md:border-transparent transition-colors">
       <div className="flex items-center">
         <Link href="/">
           <Image

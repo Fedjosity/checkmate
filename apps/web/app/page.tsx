@@ -16,12 +16,17 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
 
+export const dynamic = "force-static";
+
 export default function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      // 1. Navbar drop-in
+      let mm = gsap.matchMedia();
+
+      mm.add("(min-width: 768px)", () => {
+        // 1. Navbar drop-in
       gsap.fromTo(
         "nav",
         { y: -100, opacity: 0 },
@@ -157,6 +162,7 @@ export default function LandingPage() {
           },
         }
       );
+      }); // End of matchMedia
     },
     { scope: containerRef },
   );

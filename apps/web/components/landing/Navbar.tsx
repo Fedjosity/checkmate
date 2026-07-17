@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export const Navbar = () => {
   return (
-    <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-none bg-[#0A0B0F]/90 backdrop-blur-md">
+    <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 max-w-none bg-[#0A0B0F] md:bg-[#0A0B0F]/90 md:backdrop-blur-md border-b border-border/10 md:border-transparent transition-colors">
       <div className="flex items-center">
         <Image
           alt="CheckMate Logo"

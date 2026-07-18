@@ -9,7 +9,7 @@ export const FinalCTA = () => {
           chess_king
         </span>
       </div>
-      <div className="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center flex flex-col items-center cta-content opacity-0">
+      <div className="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center flex flex-col items-center cta-content md:opacity-0">
         <h2 className="font-headline-xl text-[48px] md:text-[72px] text-white mb-6">
           Your Board Is Waiting.
         </h2>

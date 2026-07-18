@@ -21,7 +21,7 @@ export const TrustSection = () => {
             </p>
           </div>
           <div className="space-y-6">
-            <div className="flex items-start gap-4 trust-item opacity-0">
+            <div className="flex items-start gap-4 trust-item md:opacity-0">
                 <span className="material-symbols-outlined text-primary mt-1">
                   shield_locked
                 </span>
@@ -34,7 +34,7 @@ export const TrustSection = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-4 trust-item opacity-0">
+              <div className="flex items-start gap-4 trust-item md:opacity-0">
                 <span className="material-symbols-outlined text-primary mt-1">
                   account_balance
                 </span>
@@ -47,7 +47,7 @@ export const TrustSection = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-4 trust-item opacity-0">
+              <div className="flex items-start gap-4 trust-item md:opacity-0">
                 <span className="material-symbols-outlined text-primary mt-1">
                   group
                 </span>

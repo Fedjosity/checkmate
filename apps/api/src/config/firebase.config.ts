@@ -27,6 +27,7 @@ export const initFirebase = () => {
 
     firebaseApp = admin.initializeApp({
       credential,
+      storageBucket: env.FIREBASE_STORAGE_BUCKET || (env.FIREBASE_PROJECT_ID ? `${env.FIREBASE_PROJECT_ID}.appspot.com` : undefined),
     });
   } else {
     firebaseApp = admin.app();
@@ -39,3 +40,4 @@ initFirebase();
 
 export const auth = admin.auth();
 export const db = admin.firestore();
+export const bucket = admin.storage().bucket();

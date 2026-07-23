@@ -8,6 +8,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_STORAGE_BUCKET: z.string().optional(),
   FLW_PUBLIC_KEY: z.string().optional(),
   FLW_SECRET_KEY: z.string().optional(),
   FLW_WEBHOOK_SECRET: z.string().optional(),

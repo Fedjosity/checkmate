@@ -6,16 +6,43 @@ import { success, error } from '../utils/response';
 
 const router = Router();
 
+import multer from 'multer';
+import { bucket } from '../config/firebase.config';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
+
 // ─── PATCH /users/me ────────────────────────────────────────
-router.patch('/me', requireAuth, async (req: Request, res: Response) => {
+router.patch('/me', requireAuth, upload.single('avatar'), async (req: Request, res: Response) => {
   try {
     const uid = (req as any).user.uid;
-    const { displayName, avatarUrl, country } = req.body;
+    const { displayName, country, avatarUrl } = req.body;
+    const file = req.file;
 
     const updates: Record<string, any> = {};
     if (displayName !== undefined) updates.displayName = displayName.trim();
-    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
     if (country !== undefined) updates.country = country;
+    
+    // If a string avatarUrl was passed (e.g. they want to clear it or set it manually)
+    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+
+    // If an actual file was uploaded, upload to Firebase Storage and get public URL
+    if (file) {
+      const extension = file.originalname.split('.').pop();
+      const fileName = `avatars/${uid}/${Date.now()}_avatar.${extension}`;
+      const fileUpload = bucket.file(fileName);
+
+      await fileUpload.save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype,
+        },
+      });
+
+      await fileUpload.makePublic();
+      updates.avatarUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    }
 
     if (Object.keys(updates).length === 0) {
       res.status(400).json(error('No fields to update'));

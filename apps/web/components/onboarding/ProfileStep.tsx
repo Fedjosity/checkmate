@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CountrySelect } from "@/components/utils/CountryDropdowns";
 import PersonIcon from "@mui/icons-material/Person";
+import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 import { toast } from "sonner";
 
 const profileSchema = z.object({
@@ -32,6 +33,11 @@ export function ProfileStep({ onSuccess }: ProfileStepProps) {
   const { user } = useAuth();
   const { setUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    user?.avatarUrl || null
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If user already has a Google display name or email name pre-filled
   const initialDisplayName =
@@ -53,12 +59,25 @@ export function ProfileStep({ onSuccess }: ProfileStepProps) {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be smaller than 5MB");
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const onSubmit = async (data: ProfileForm) => {
     setIsLoading(true);
     try {
       const response: any = await updateMe({
         displayName: data.displayName,
         country: data.country,
+        avatarFile: avatarFile || undefined,
       });
 
       if (user) {
@@ -66,6 +85,7 @@ export function ProfileStep({ onSuccess }: ProfileStepProps) {
           ...user,
           displayName: data.displayName,
           country: data.country,
+          avatarUrl: response?.data?.user?.avatarUrl || user.avatarUrl,
         });
       } else if (response?.data?.user) {
         setUser(response.data.user);
@@ -85,8 +105,37 @@ export function ProfileStep({ onSuccess }: ProfileStepProps) {
   return (
     <div className="transition-transform duration-300">
       <Card padding="lg" className="luxury-glow max-w-md mx-auto w-full">
-        <div className="w-16 h-16 rounded-full bg-surface-bright border border-gold/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(201,168,76,0.15)]">
-          <PersonIcon fontSize="large" className="text-gold" />
+        <div className="flex flex-col items-center mb-6">
+          <div
+            className="relative w-20 h-20 rounded-full bg-surface-bright border border-gold/30 flex items-center justify-center cursor-pointer overflow-hidden shadow-[0_0_15px_rgba(201,168,76,0.15)] group transition-all hover:border-gold"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {avatarPreview ? (
+              <img
+                src={avatarPreview as string}
+                alt="Avatar preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <PersonIcon fontSize="large" className="text-gold group-hover:opacity-0 transition-opacity" />
+            )}
+            
+            {/* Hover overlay for changing avatar */}
+            <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity ${avatarPreview ? "opacity-0 group-hover:opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+              <AddAPhotoIcon fontSize="small" className="text-white" />
+            </div>
+          </div>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+          <p className="text-xs text-on-surface-variant mt-2">
+            Upload a profile picture (Optional)
+          </p>
         </div>
 
         <h2 className="font-headline-md text-headline-md text-white text-center mb-2">

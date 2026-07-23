@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/lib/firebase/config";
 import { StepProgress } from "@/components/onboarding/StepProgress";
 import { EmailOTPStep } from "@/components/onboarding/EmailOTPStep";
 import { ProfileStep } from "@/components/onboarding/ProfileStep";
@@ -17,16 +18,26 @@ export default function OnboardingPage() {
 
   const [steps, setSteps] = useState<StepType[]>([]);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || initializedRef.current) return;
+    initializedRef.current = true;
 
-    const activeSteps: StepType[] = isEmailVerified
-      ? ["profile", "welcome"]
-      : ["otp", "profile", "welcome"];
+    // Check if user signed up via Google
+    const isGoogleUser = auth.currentUser?.providerData?.some(
+      (p) => p.providerId === "google.com"
+    );
 
-    setSteps(activeSteps);
-    setStepIndex((prev) => (prev === null ? 0 : prev));
+    if (isGoogleUser) {
+      setSteps(["profile", "welcome"]);
+      setStepIndex(0);
+    } else {
+      // Email/Password user: Always 3 steps
+      setSteps(["otp", "profile", "welcome"]);
+      // If email is already verified (e.g. reloaded after OTP step), start at profile step (index 1)
+      setStepIndex(isEmailVerified ? 1 : 0);
+    }
   }, [user, isEmailVerified]);
 
   if (stepIndex === null || steps.length === 0) {

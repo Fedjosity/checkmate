@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,12 +10,53 @@ import PersonIcon from "@mui/icons-material/Person";
 import { cn } from "@/lib/utils/cn";
 import { useUIStore } from "@/store/ui.store";
 
-export function AvatarDropdown() {
+interface AvatarDropdownProps {
+  direction?: "up" | "down" | "auto";
+  align?: "left" | "right" | "auto";
+  className?: string;
+}
+
+export function AvatarDropdown({
+  direction = "auto",
+  align = "auto",
+  className,
+}: AvatarDropdownProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, clear } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{
+    direction: "up" | "down";
+    align: "left" | "right";
+  }>({ direction: "up", align: "left" });
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const isSidebarCollapsed = useUIStore((s) => s.isSidebarCollapsed);
+
+  const toggleDropdown = () => {
+    if (!isDropdownOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const windowWidth = window.innerWidth;
+
+      const newDirection =
+        direction === "auto"
+          ? rect.top > windowHeight / 2
+            ? "up"
+            : "down"
+          : direction;
+
+      const newAlign =
+        align === "auto"
+          ? rect.left > windowWidth / 2
+            ? "right"
+            : "left"
+          : align;
+
+      setMenuPosition({ direction: newDirection, align: newAlign });
+    }
+    setIsDropdownOpen((prev) => !prev);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -30,15 +71,23 @@ export function AvatarDropdown() {
   if (!user) return null;
 
   return (
-    <div className="relative w-full">
-      {/* Dropdown Menu (Opens Upwards) */}
+    <div ref={containerRef} className={cn("relative w-full", className)}>
+      {/* Dropdown Menu */}
       {isDropdownOpen && (
         <>
           <div
             className="fixed inset-0 z-40"
             onClick={() => setIsDropdownOpen(false)}
           />
-          <div className="absolute bottom-full left-0 mb-2 w-[200px] bg-surface-container border border-border rounded-xl shadow-[0_-4px_24px_rgba(0,0,0,0.5)] z-50 py-1 overflow-hidden">
+          <div
+            className={cn(
+              "absolute w-[200px] bg-surface-container border border-border rounded-xl z-50 py-1 overflow-hidden",
+              menuPosition.direction === "up"
+                ? "bottom-full mb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.5)]"
+                : "top-full mt-2 shadow-[0_4px_24px_rgba(0,0,0,0.5)]",
+              menuPosition.align === "right" ? "right-0" : "left-0"
+            )}
+          >
             {pathname !== "/dashboard" && (
               <Link
                 href="/dashboard"
@@ -78,7 +127,7 @@ export function AvatarDropdown() {
 
       {/* Trigger Button */}
       <button
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        onClick={toggleDropdown}
         title={isSidebarCollapsed ? "Profile & Settings" : undefined}
         className={cn(
           "flex items-center rounded-xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-border/50 focus:outline-none",
@@ -97,7 +146,7 @@ export function AvatarDropdown() {
             <PersonIcon fontSize="medium" className="text-primary" />
           )}
         </div>
-        
+
         {!isSidebarCollapsed && (
           <>
             <div className="flex-1 min-w-0 text-left">

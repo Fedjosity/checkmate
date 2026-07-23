@@ -7,16 +7,19 @@ interface StepProgressProps {
 
 export function StepProgress({ currentStep, totalSteps }: StepProgressProps) {
   return (
-    <div className="flex gap-1.5 w-full mb-8">
+    <div className="flex gap-2.5 w-full mb-6">
       {Array.from({ length: totalSteps }).map((_, i) => {
         const stepNumber = i + 1;
-        const isActiveOrCompleted = stepNumber <= currentStep;
+        const isCurrent = stepNumber === currentStep;
+        const isCompleted = stepNumber < currentStep;
 
         return (
           <div
             key={stepNumber}
-            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ease-in-out ${
-              isActiveOrCompleted ? "bg-gold" : "bg-border"
+            className={`h-2 flex-1 rounded-full transition-all duration-500 ease-in-out ${
+              isCurrent || isCompleted
+                ? "bg-gold shadow-[0_0_12px_rgba(201,168,76,0.7)]"
+                : "bg-surface-bright border border-border/60"
             }`}
           />
         );

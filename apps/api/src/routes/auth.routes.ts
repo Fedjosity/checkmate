@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.middleware';
 import { db } from '../config/firebase.config';
 import { emailService } from '../services/email/email.service';
-import { emailVerificationTemplate } from '../templates/emailVerification.template';
+import { renderEmailTemplate } from '../utils/templateLoader';
 import { logger } from '../utils/logger';
 import { success, error } from '../utils/response';
 import { guestSessionService } from '../services/guestSession.service';
@@ -78,8 +78,8 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
     const firebaseUser = (req as any).user;
     const { displayName, email, country } = req.body;
 
-    if (!displayName || !email || !country) {
-      res.status(400).json(error('displayName, email, and country are required'));
+    if (!email) {
+      res.status(400).json(error('Email is required'));
       return;
     }
 
@@ -96,11 +96,14 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
     // Check if Firebase has already verified this email (Google sign-in)
     const isEmailVerified = firebaseUser.email_verified === true;
 
+    const finalDisplayName = (displayName && displayName.trim()) || firebaseUser.name || email.split('@')[0];
+    const finalCountry = country || 'Other';
+
     const now = new Date().toISOString();
     const userData = {
       email: email.toLowerCase().trim(),
-      displayName: displayName.trim(),
-      country,
+      displayName: finalDisplayName,
+      country: finalCountry,
       avatarUrl: firebaseUser.picture || null,
       emailVerified: isEmailVerified,
       kycStatus: 'unverified',
@@ -112,8 +115,6 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
     await db.collection('users').doc(uid).set(userData);
 
     // If email is NOT verified (email/password sign-up), generate and send OTP
-    // [DISABLED] - Using native Firebase mail verification for now
-    /*
     if (!isEmailVerified) {
       const code = generateOTP();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -127,17 +128,16 @@ router.post('/register', requireAuth, async (req: Request, res: Response) => {
       });
 
       // Send verification email
-      const firstName = displayName.split(' ')[0];
+      const firstName = finalDisplayName.split(' ')[0];
       await emailService.send({
         to: email.toLowerCase().trim(),
-        toName: displayName,
+        toName: finalDisplayName,
         subject: 'Verify your email — CheckMate',
-        htmlBody: emailVerificationTemplate(firstName, code),
+        htmlBody: renderEmailTemplate('emailVerification.html', { firstName, code }),
       });
 
       logger.info(`Verification email sent to ${email}`);
     }
-    */
 
     res.status(201).json(success({ user: { uid, ...userData } }, 'User registered'));
   } catch (err: any) {
@@ -264,8 +264,6 @@ router.post('/resend-verification', requireAuth, async (req: Request, res: Respo
       }
     }
 
-    // [DISABLED] - Using native Firebase mail verification for now
-    /*
     // Generate new OTP
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -283,13 +281,11 @@ router.post('/resend-verification', requireAuth, async (req: Request, res: Respo
       to: userData.email,
       toName: userData.displayName,
       subject: 'Your new verification code — CheckMate',
-      htmlBody: emailVerificationTemplate(firstName, code),
+      htmlBody: renderEmailTemplate('emailVerification.html', { firstName, code }),
     });
 
     logger.info(`Resent verification email to ${userData.email}`);
     res.json(success(null, 'New verification code sent'));
-    */
-    res.status(400).json(error('Custom verification is temporarily disabled. Use Firebase native link.'));
   } catch (err: any) {
     logger.error('ResendVerification error', { error: err.message });
     res.status(500).json(error('Failed to resend code. Please try again.'));

@@ -8,23 +8,17 @@ import { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-import { signUpWithEmail, signInWithGoogle, sendVerificationEmail } from "@/lib/firebase/auth";
+import { signUpWithEmail, signInWithGoogle } from "@/lib/firebase/auth";
 import { getMe, registerUser } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { CountrySelect } from "@/components/utils/CountryDropdowns";
 import GoogleIcon from "@mui/icons-material/Google";
 
 const registerSchema = z.object({
-  displayName: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be 50 characters or less"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  country: z.string().min(1, "Please select your country"),
   terms: z.literal(true, {
     errorMap: () => ({ message: "You must agree to continue" }),
   }),
@@ -95,9 +89,6 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      country: "",
-    },
   });
 
   const password = watch("password", "");
@@ -107,12 +98,8 @@ export default function RegisterPage() {
     try {
       await signUpWithEmail(data.email, data.password);
       await registerUser({
-        displayName: data.displayName,
         email: data.email,
-        country: data.country,
       });
-      // Send Firebase native verification email
-      await sendVerificationEmail();
 
       const response: any = await getMe();
       setUser(response.data.user);
@@ -195,18 +182,11 @@ export default function RegisterPage() {
               Create your account
             </h1>
             <p className="text-on-surface-variant text-sm">
-              Set up your CheckMate profile and start competing
+              Enter your credentials to get started with CheckMate
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Full Name"
-              placeholder="Your display name"
-              error={errors.displayName?.message}
-              {...register("displayName")}
-            />
-
             <Input
               label="Email Address"
               type="email"
@@ -224,16 +204,6 @@ export default function RegisterPage() {
                 {...register("password")}
               />
               <PasswordStrengthBar password={password} />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-white">
-                Country
-              </label>
-              <CountrySelect {...register("country")} />
-              {errors.country && (
-                <p className="text-sm text-error">{errors.country.message}</p>
-              )}
             </div>
 
             {/* Terms Checkbox */}

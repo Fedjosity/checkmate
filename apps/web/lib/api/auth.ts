@@ -1,9 +1,9 @@
 import { apiClient } from './client';
 
 export const registerUser = (data: {
-  displayName: string;
+  displayName?: string;
   email: string;
-  country: string;
+  country?: string;
 }) => apiClient.post('/v1/auth/register', data);
 
 export const getMe = () => apiClient.get('/v1/auth/me');

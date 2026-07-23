@@ -4,7 +4,7 @@ import { db } from "../config/firebase.config";
 import { validateRequest } from "../middleware/validate.middleware";
 import { joinWaitlistSchema, JoinWaitlistDTO } from "@checkmate/shared-types";
 import { emailService } from "../services/email/email.service";
-import { waitlistConfirmationTemplate } from "../templates/waitlistConfirmation.template";
+import { renderEmailTemplate } from "../utils/templateLoader";
 import { logger } from "../utils/logger";
 import { success, error } from "../utils/response";
 import * as admin from "firebase-admin";
@@ -90,12 +90,13 @@ router.post("/join", joinLimiter, validateRequest(joinWaitlistSchema), async (re
     }
 
     if (result.isNew) {
+      const firstName = result.fullName ? result.fullName.split(' ')[0] : 'Player';
       // Fire and forget — don't block the HTTP response
       emailService.send({
         to: result.email,
         toName: result.fullName!,
         subject: "You're in the queue — CheckMate Beta #" + result.position,
-        htmlBody: waitlistConfirmationTemplate(result.fullName!, result.position),
+        htmlBody: renderEmailTemplate('waitlistConfirmation.html', { firstName, position: result.position }),
       }).then(sendResult => {
         // Update emailSent field in Firestore based on result.success
         db.collection('waitlist').doc(result.docId!).update({ 

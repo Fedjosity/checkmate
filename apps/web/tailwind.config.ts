@@ -60,6 +60,7 @@ const config: Config = {
       "success": "#81B64C",
       "text-primary": "#F0F0EE",
       "secondary-fixed": "#ffdf9e",
+      "gold": "#C9A84C",
       "gold-dim": "#7D6530"
     },
     "borderRadius": {

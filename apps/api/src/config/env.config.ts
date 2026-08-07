@@ -10,6 +10,7 @@ const envSchema = z.object({
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_STORAGE_BUCKET: z.string().optional(),
+  ADMIN_EMAIL: z.string().optional(),
   FLW_PUBLIC_KEY: z.string().optional(),
   FLW_SECRET_KEY: z.string().optional(),
   FLW_WEBHOOK_SECRET: z.string().optional(),

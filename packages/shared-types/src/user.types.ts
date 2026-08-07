@@ -38,6 +38,7 @@ export interface User {
   emailVerified: boolean;
   kycStatus: 'unverified' | 'pending' | 'verified' | 'failed' | 'resubmitted';
   kycSessionUrl?: string;
+  kycSessionExpiresAt?: number;
   wallet: Wallet;
   elo: Elo;
   bankAccount: BankAccount | null;

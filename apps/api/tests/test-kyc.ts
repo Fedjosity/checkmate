@@ -11,7 +11,7 @@ const statusToTest = process.argv[3] || 'Approved';
 if (!UID) {
   console.error('\n❌ Please provide a Firebase UID as an argument');
   console.error('Usage: pnpm ts-node test-kyc.ts <uid> [status]');
-  console.error('Statuses: Approved, Declined, Resubmitted, Pending\n');
+  console.error('Statuses: Approved, Declined, Resubmitted, Pending, Expired, Abandoned\n');
   process.exit(1);
 }
 

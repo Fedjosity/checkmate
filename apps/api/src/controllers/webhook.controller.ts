@@ -75,6 +75,14 @@ export const webhookController = {
               htmlBody: renderEmailTemplate('kycAdminManualReview.html', { uid, displayName: userData.displayName }),
             }).catch(e => logger.error('Failed to send admin email', e));
           }
+        } else if (status === 'Expired' || status === 'Abandoned') {
+          // Didit tells us the session timed out or was abandoned.
+          // Clear the session URL so a fresh one is generated next time they try.
+          await db.collection('users').doc(uid).update({
+            kycSessionUrl: null
+          });
+          logger.info(`Didit session ${status} for ${uid} — cleared kycSessionUrl`);
+          // We don't change kycStatus here, we just want to reset the session link.
         }
 
         if (kycStatus !== userData.kycStatus) {

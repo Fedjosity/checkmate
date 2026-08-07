@@ -100,6 +100,25 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     );
   }
 
+  if (kycStatus === 'resubmitted') {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <div className="text-center py-8">
+          <VerifiedUserIcon className="text-orange-500 mb-4 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]" style={{ fontSize: 48 }} />
+          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Action Required</h2>
+          <p className="text-muted text-sm mb-6 leading-relaxed">
+            There was an issue with your verification. You may need to provide a clearer photo or redo the liveness check.
+          </p>
+          
+          <div className="flex gap-3">
+            <Button variant="ghost" className="w-full" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" className="w-full !bg-orange-500 hover:!bg-orange-600 !text-white" onClick={handleStartKyc} isLoading={isLoading}>Resume Verification</Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   if (kycStatus !== 'verified') {
     return (
       <Modal isOpen={isOpen} onClose={onClose}>

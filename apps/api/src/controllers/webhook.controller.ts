@@ -5,6 +5,8 @@ import { getIO } from "../socket";
 import * as walletService from "../services/wallet.service";
 import { env } from "../config/env.config";
 import { verifyDiditWebhookSignature } from "../services/didit.service";
+import { emailService } from "../services/email/email.service";
+import { renderEmailTemplate } from "../utils/templateLoader";
 
 export const webhookController = {
   async handleDidit(req: Request, res: Response): Promise<void> {
@@ -31,8 +33,19 @@ export const webhookController = {
           return;
         }
 
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.exists) {
+          res.status(404).send('User not found');
+          return;
+        }
+        const userData = userDoc.data()!;
+        const firstName = (userData.displayName || 'Player').split(' ')[0];
+        const userEmail = userData.email;
+
         // Determine if they passed KYC
-        let kycStatus = 'pending';
+        let kycStatus = userData.kycStatus || 'pending';
+        let emailTemplate = '';
+        let emailSubject = '';
         
         if (status === 'Approved' || status === 'Completed' || status === 'ACTIVE') {
           // Sometimes Didit sends 'ACTIVE' for user.data.updated when they are fully approved
@@ -50,13 +63,46 @@ export const webhookController = {
           }
         } else if (status === 'Declined' || status === 'Failed') {
           kycStatus = 'failed';
+        } else if (status === 'Resubmitted') {
+          kycStatus = 'resubmitted';
+        } else if (status === 'Pending' || status === 'Review' || status === 'ManualReview') {
+          // Trigger admin email for manual review
+          if (env.ADMIN_EMAIL) {
+            await emailService.send({
+              to: env.ADMIN_EMAIL,
+              toName: 'CheckMate Admin',
+              subject: 'Action Required: Manual KYC Review',
+              htmlBody: renderEmailTemplate('kycAdminManualReview.html', { uid, displayName: userData.displayName }),
+            }).catch(e => logger.error('Failed to send admin email', e));
+          }
         }
 
-        if (kycStatus !== 'pending') {
+        if (kycStatus !== userData.kycStatus) {
           await db.collection('users').doc(uid).update({
             kycStatus
           });
           logger.info(`Didit KYC status updated for ${uid} to ${kycStatus}`);
+          
+          // Determine which email to send
+          if (kycStatus === 'verified') {
+            emailTemplate = 'kycApproved.html';
+            emailSubject = 'KYC Verification Approved! 🎉';
+          } else if (kycStatus === 'failed') {
+            emailTemplate = 'kycDeclined.html';
+            emailSubject = 'KYC Verification Declined';
+          } else if (kycStatus === 'resubmitted') {
+            emailTemplate = 'kycResubmit.html';
+            emailSubject = 'Action Required: KYC Verification Issues';
+          }
+          
+          if (emailTemplate) {
+            await emailService.send({
+              to: userEmail,
+              toName: userData.displayName,
+              subject: emailSubject,
+              htmlBody: renderEmailTemplate(emailTemplate, { firstName }),
+            }).catch(e => logger.error('Failed to send KYC email', e));
+          }
         }
       }
 

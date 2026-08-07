@@ -37,7 +37,24 @@ export const walletController = {
   async createKycSession(req: Request, res: Response): Promise<void> {
     try {
       const uid = (req as any).user.uid;
+      
+      const userDoc = await db.collection("users").doc(uid).get();
+      const userData = userDoc.data();
+      
+      if (
+        userData?.kycSessionUrl && 
+        (userData.kycStatus === 'resubmitted' || userData.kycStatus === 'unverified' || userData.kycStatus === 'pending')
+      ) {
+        // Reuse existing session URL for resubmissions or uncompleted flows
+        res.json(success({ url: userData.kycSessionUrl }));
+        return;
+      }
+      
       const url = await require('../services/didit.service').createKycSession(uid);
+      
+      // Save the session URL to the user document
+      await db.collection("users").doc(uid).update({ kycSessionUrl: url });
+      
       res.json(success({ url }));
     } catch (err: any) {
       logger.error("Create KYC session error", { error: err.message });

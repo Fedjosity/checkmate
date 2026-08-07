@@ -52,7 +52,13 @@ router.patch('/me', requireAuth, upload.single('avatar'), async (req: Request, r
     await db.collection('users').doc(uid).update(updates);
 
     const updatedDoc = await db.collection('users').doc(uid).get();
-    res.json(success({ user: { uid, ...updatedDoc.data() } }, 'Profile updated'));
+    const userData = updatedDoc.data() as any;
+    
+    if (!userData.kycStatus) userData.kycStatus = 'unverified';
+    if (!userData.wallet) userData.wallet = { availableBalance: 0, stakedBalance: 0, bonusBalance: 0, currency: 'USD' };
+    if (!userData.elo) userData.elo = { blitz: 1200, rapid: 1200, bullet: 1200, classic: 1200, gamesPlayed: 0 };
+
+    res.json(success({ user: { uid, ...userData } }, 'Profile updated'));
   } catch (err: any) {
     logger.error('UpdateMe error', { error: err.message });
     res.status(500).json(error('Failed to update profile'));

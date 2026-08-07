@@ -160,6 +160,11 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
 
     const userData = doc.data() as any;
 
+    // Default fields for older accounts that might not have them
+    if (!userData.kycStatus) userData.kycStatus = 'unverified';
+    if (!userData.wallet) userData.wallet = DEFAULT_WALLET;
+    if (!userData.elo) userData.elo = DEFAULT_ELO;
+
     // Sync emailVerified if Firebase says it's verified but DB says false
     if (firebaseUser.email_verified && !userData.emailVerified) {
       await db.collection('users').doc(uid).update({ emailVerified: true });

@@ -107,7 +107,9 @@ export default function RegisterPage() {
     } catch (err: any) {
       const code = err?.code || "";
       const message =
-        firebaseErrorMap[code] || err?.message || "Registration failed. Try again.";
+        firebaseErrorMap[code] ||
+        err?.message ||
+        "Registration failed. Try again.";
       console.error("Registration Error: ", err);
       toast.error(message);
     } finally {
@@ -274,7 +276,7 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-gold text-primary hover:text-primary-fixed font-semibold transition-colors"
+              className="text-gold hover:text-primary-fixed font-semibold transition-colors"
             >
               Sign in
             </Link>

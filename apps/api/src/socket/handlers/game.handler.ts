@@ -1,208 +1,168 @@
 import { Server, Socket } from 'socket.io';
 import { db } from '../../config/firebase.config';
-import { Chess } from 'chess.js';
 import { payoutService } from '../../services/payout.service';
 import { stockfishService } from '../../services/stockfish.service';
+import { redisService, LiveGameState } from '../../services/redis.service';
+import { PvpEngine } from '../../services/pvp.engine';
 import { logger } from '../../utils/logger';
 
-// In-memory state for active games
-interface ActiveGame {
-  id: string;
-  chess: Chess;
-  whiteUid: string;
-  blackUid: string;
-  isBot: boolean;
-  botDifficulty?: string;
-  timeControlCategory: string;
-  incrementMs: number;
-  isUnlimited: boolean;
-  stakeAmountCrowns: number;
-  whiteTimeRemainingMs: number;
-  blackTimeRemainingMs: number;
-  lastMoveTimestamp: number;
-  status: 'waiting' | 'active' | 'completed';
-  whiteConnected: boolean;
-  blackConnected: boolean;
-  drawOfferBy?: 'white' | 'black' | null;
-  disconnectTimeout?: NodeJS.Timeout;
-}
-
-const activeGames = new Map<string, ActiveGame>();
-
-// Global clock tick interval
+// Track active disconnect timers in memory
+const disconnectTimers = new Map<string, NodeJS.Timeout>();
 let clockInterval: NodeJS.Timeout | null = null;
 let ioInstance: Server | null = null;
+
+// Track active game IDs currently in memory for clock ticks
+const activeGameIds = new Set<string>();
 
 const startGameClock = (io: Server) => {
   if (clockInterval) return;
   ioInstance = io;
 
-  clockInterval = setInterval(() => {
+  clockInterval = setInterval(async () => {
     const now = Date.now();
 
-    for (const [gameId, game] of Array.from(activeGames.entries())) {
-      if (game.status !== 'active') continue;
-      if (game.isUnlimited) continue; // No clock for unlimited games
+    for (const gameId of Array.from(activeGameIds)) {
+      const state = await redisService.getGameState(gameId);
+      if (!state || state.status !== 'active') {
+        activeGameIds.delete(gameId);
+        continue;
+      }
 
-      const activeColor = game.chess.turn() === 'w' ? 'white' : 'black';
-      const elapsed = now - game.lastMoveTimestamp;
-      
-      // We don't deduct time here to avoid drift, we just check if it's over
-      const remaining = activeColor === 'white' 
-        ? game.whiteTimeRemainingMs - elapsed
-        : game.blackTimeRemainingMs - elapsed;
+      if (state.isUnlimited) continue;
 
-      // Sync clocks every 1 second
-      if (now % 1000 < 100) {
+      const clock = PvpEngine.calculateClock(state, now);
+
+      // Sync clocks every second
+      if (now % 1000 < 120) {
         io.to(`game_${gameId}`).emit('game:clock_sync', {
-          whiteTimeRemainingMs: activeColor === 'white' ? remaining : game.whiteTimeRemainingMs,
-          blackTimeRemainingMs: activeColor === 'black' ? remaining : game.blackTimeRemainingMs,
+          whiteTimeRemainingMs: clock.whiteTimeRemainingMs,
+          blackTimeRemainingMs: clock.blackTimeRemainingMs,
         });
       }
 
       // Check timeout
-      if (remaining <= 0) {
-        const winner = activeColor === 'white' ? 'black' : 'white';
-        handleGameOver(gameId, winner, 'timeout');
+      if (clock.isTimedOut && clock.timeoutWinner) {
+        activeGameIds.delete(gameId);
+        await handleGameOver(gameId, clock.timeoutWinner, 'timeout');
       }
     }
   }, 100);
 };
 
 export const handleGameOver = async (gameId: string, result: 'white' | 'black' | 'draw', reason: string) => {
-  const game = activeGames.get(gameId);
-  if (!game) return;
+  activeGameIds.delete(gameId);
 
-  game.status = 'completed';
-  
-  if (game.disconnectTimeout) {
-    clearTimeout(game.disconnectTimeout);
+  // Clear any abandonment disconnect timers
+  if (disconnectTimers.has(gameId)) {
+    clearTimeout(disconnectTimers.get(gameId)!);
+    disconnectTimers.delete(gameId);
   }
 
-  // Destroy bot if needed
-  if (game.isBot) {
+  const state = await redisService.getGameState(gameId);
+  if (!state) return;
+
+  state.status = 'completed';
+  await redisService.saveGameState(gameId, state);
+
+  // Destroy bot if active
+  if (state.isBot) {
     stockfishService.destroyInstance(gameId);
   }
 
-  activeGames.delete(gameId);
   logger.info(`Game over: ${gameId}`, { result, reason });
 
-  // If not bot and there are stakes or it's competitive, process payout/ELO
-  if (!game.isBot) {
-    if (result === 'draw') {
-      await payoutService.processDraw({
-        gameId,
-        whiteUid: game.whiteUid,
-        blackUid: game.blackUid,
-        timeControl: (game.timeControlCategory as 'blitz' | 'rapid' | 'bullet' | 'classic') || 'blitz',
-        stakeAmountCrowns: game.stakeAmountCrowns,
-      });
-    } else {
-      const winnerUid = result === 'white' ? game.whiteUid : game.blackUid;
-      const loserUid = result === 'white' ? game.blackUid : game.whiteUid;
-      await payoutService.processWin({
-        gameId,
-        winnerUid,
-        loserUid,
-        timeControl: (game.timeControlCategory as 'blitz' | 'rapid' | 'bullet' | 'classic') || 'blitz',
-        stakeAmountCrowns: game.stakeAmountCrowns,
-      });
-    }
-  } else {
-    // Just update Firestore for bot game
-    await db.collection('games').doc(gameId).update({
-      status: 'completed',
-      result,
-      resultReason: reason,
-      completedAt: new Date().toISOString()
-    });
-    
-    // Emit generic game over for bot games
-    if (ioInstance) {
-      ioInstance.to(`game_${gameId}`).emit('game:over', {
-        result,
-        reason,
-        payout: 0,
-      });
+  // Update Firestore once at the end
+  await db.collection('games').doc(gameId).update({
+    status: 'completed',
+    result,
+    resultReason: reason,
+    fen: state.fen,
+    pgn: state.pgn,
+    moves: state.moves,
+    whiteTimeRemainingMs: state.whiteTimeRemainingMs,
+    blackTimeRemainingMs: state.blackTimeRemainingMs,
+    completedAt: new Date().toISOString(),
+  });
+
+  // Process payouts & ELO ratings if it was a real PvP game
+  if (!state.isBot) {
+    try {
+      if (result === 'draw') {
+        await payoutService.processDraw({
+          gameId,
+          whiteUid: state.whiteUid,
+          blackUid: state.blackUid,
+          timeControl: (state.timeControlCategory as any) || 'blitz',
+          stakeAmountCrowns: state.stakeAmountCrowns,
+        });
+      } else {
+        const winnerUid = result === 'white' ? state.whiteUid : state.blackUid;
+        const loserUid = result === 'white' ? state.blackUid : state.whiteUid;
+        await payoutService.processWin({
+          gameId,
+          winnerUid,
+          loserUid,
+          timeControl: (state.timeControlCategory as any) || 'blitz',
+          stakeAmountCrowns: state.stakeAmountCrowns,
+        });
+      }
+    } catch (err: any) {
+      logger.error('Failed to process PvP payout/ELO on game over', { gameId, error: err.message });
     }
   }
+
+  // Emit game over to room
+  if (ioInstance) {
+    ioInstance.to(`game_${gameId}`).emit('game:over', {
+      result,
+      reason,
+      payout: state.stakeAmountCrowns > 0 ? state.stakeAmountCrowns * 1.9 : 0,
+    });
+  }
+
+  // Clean up Redis after a short buffer
+  setTimeout(() => {
+    redisService.deleteGameState(gameId).catch(() => {});
+  }, 10000);
 };
 
 const triggerBotMove = async (gameId: string) => {
-  const game = activeGames.get(gameId);
-  if (!game || game.status !== 'active' || !game.isBot) return;
+  const state = await redisService.getGameState(gameId);
+  if (!state || state.status !== 'active' || !state.isBot) return;
 
   try {
-    const fen = game.chess.fen();
-    const bestMove = await stockfishService.getBestMove(gameId, fen);
-    
-    if (!activeGames.has(gameId)) return; // Game might have ended during think time
+    const bestMove = await stockfishService.getBestMove(gameId, state.fen);
+    const currentState = await redisService.getGameState(gameId);
+    if (!currentState || currentState.status !== 'active') return;
 
-    const moveObj = game.chess.move(bestMove, { strict: false });
-    if (!moveObj) {
-      logger.error(`Bot attempted invalid move: ${bestMove}`);
+    const moveResult = PvpEngine.applyMove({
+      state: currentState,
+      uid: 'bot',
+      move: bestMove,
+    });
+
+    if (!moveResult.success || !moveResult.newState) {
+      logger.error(`Bot attempted invalid move: ${bestMove}`, { error: moveResult.error });
       return;
     }
 
-    const now = Date.now();
-    const elapsed = now - game.lastMoveTimestamp;
-    // Only deduct time for timed games
-    if (!game.isUnlimited) {
-      // The bot made the move so the color that moved gets elapsed deducted and increment added
-      const movedColor = game.chess.turn() === 'w' ? 'black' : 'white'; // turn flipped after move
-      
-      if (movedColor === 'white') {
-        game.whiteTimeRemainingMs -= elapsed;
-        game.whiteTimeRemainingMs += game.incrementMs;
-      } else {
-        game.blackTimeRemainingMs -= elapsed;
-        game.blackTimeRemainingMs += game.incrementMs;
-      }
-    }
-    game.lastMoveTimestamp = now;
-
-    const newFen = game.chess.fen();
-    const newPgn = game.chess.pgn();
-
-    await db.collection('games').doc(gameId).update({
-      fen: newFen,
-      pgn: newPgn,
-      whiteTimeRemainingMs: game.whiteTimeRemainingMs,
-      blackTimeRemainingMs: game.blackTimeRemainingMs,
-    });
+    await redisService.saveGameState(gameId, moveResult.newState);
 
     if (ioInstance) {
       ioInstance.to(`game_${gameId}`).emit('game:move', {
         move: bestMove,
-        fen: newFen,
-        pgn: newPgn,
-        whiteTimeRemainingMs: game.whiteTimeRemainingMs,
-        blackTimeRemainingMs: game.blackTimeRemainingMs,
+        fen: moveResult.newState.fen,
+        pgn: moveResult.newState.pgn,
+        whiteTimeRemainingMs: moveResult.newState.whiteTimeRemainingMs,
+        blackTimeRemainingMs: moveResult.newState.blackTimeRemainingMs,
       });
     }
 
-    checkGameEnding(gameId);
-
+    if (moveResult.gameEnding?.isOver && moveResult.gameEnding.winner && moveResult.gameEnding.reason) {
+      await handleGameOver(gameId, moveResult.gameEnding.winner, moveResult.gameEnding.reason);
+    }
   } catch (error) {
     logger.error('Bot move failed', { error });
-  }
-};
-
-const checkGameEnding = (gameId: string) => {
-  const game = activeGames.get(gameId);
-  if (!game) return;
-
-  if (game.chess.isCheckmate()) {
-    const winner = game.chess.turn() === 'w' ? 'black' : 'white';
-    handleGameOver(gameId, winner, 'checkmate');
-  } else if (game.chess.isDraw()) {
-    handleGameOver(gameId, 'draw', 'stalemate_or_repetition');
-  } else if (game.chess.isStalemate()) {
-    handleGameOver(gameId, 'draw', 'stalemate');
-  } else if (game.chess.isThreefoldRepetition()) {
-    handleGameOver(gameId, 'draw', 'repetition');
-  } else if (game.chess.isInsufficientMaterial()) {
-    handleGameOver(gameId, 'draw', 'insufficient_material');
   }
 };
 
@@ -212,10 +172,10 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
   socket.on('game:join', async (data: { gameId: string; uid: string }) => {
     const { gameId, uid } = data;
 
-    let game = activeGames.get(gameId);
+    let state = await redisService.getGameState(gameId);
 
-    // If not in memory, load from Firestore
-    if (!game) {
+    // Fallback: If not in Redis, reconstruct from Firestore
+    if (!state) {
       const doc = await db.collection('games').doc(gameId).get();
       if (!doc.exists) {
         socket.emit('error', { message: 'Game not found' });
@@ -227,197 +187,188 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
         return;
       }
 
-      game = {
+      state = {
         id: gameId,
-        chess: new Chess(gData.fen),
         whiteUid: gData.whiteUid,
         blackUid: gData.blackUid,
+        fen: gData.fen,
+        pgn: gData.pgn || '',
+        moves: gData.moves || [],
+        mode: gData.mode || 'pvp',
         isBot: gData.isBot ?? false,
         botDifficulty: gData.botDifficulty,
-        timeControlCategory: gData.timeControlCategory ?? gData.timeControl ?? 'blitz',
-        incrementMs: gData.incrementMs ?? 0,
+        timeControlId: gData.timeControlId || 'standard',
+        timeControlCategory: gData.timeControlCategory || 'blitz',
+        baseTimeMs: gData.baseTimeMs || 0,
+        incrementMs: gData.incrementMs || 0,
         isUnlimited: gData.isUnlimited ?? false,
-        stakeAmountCrowns: gData.stakeAmountCrowns ?? 0,
-        whiteTimeRemainingMs: gData.whiteTimeRemainingMs,
-        blackTimeRemainingMs: gData.blackTimeRemainingMs,
+        stakeAmountCrowns: gData.stakeAmountCrowns || 0,
+        whiteTimeRemainingMs: gData.whiteTimeRemainingMs || 0,
+        blackTimeRemainingMs: gData.blackTimeRemainingMs || 0,
         lastMoveTimestamp: Date.now(),
         status: gData.status as 'waiting' | 'active',
         whiteConnected: false,
         blackConnected: false,
+        drawOfferBy: null,
+        createdAt: Date.now(),
       };
-      activeGames.set(gameId, game);
+      await redisService.saveGameState(gameId, state);
     }
 
-    if (uid !== game.whiteUid && uid !== game.blackUid) {
+    if (uid !== state.whiteUid && uid !== state.blackUid) {
       socket.emit('error', { message: 'Not a participant' });
       return;
     }
 
     socket.join(`game_${gameId}`);
-    
-    // Store gameId and uid on socket for disconnect handling
     (socket as any).gameId = gameId;
     (socket as any).uid = uid;
 
-    if (uid === game.whiteUid) game.whiteConnected = true;
-    if (uid === game.blackUid) game.blackConnected = true;
+    if (uid === state.whiteUid) state.whiteConnected = true;
+    if (uid === state.blackUid) state.blackConnected = true;
 
-    // Clear disconnect timeout if reconnecting
-    if (game.disconnectTimeout) {
-      clearTimeout(game.disconnectTimeout);
-      game.disconnectTimeout = undefined;
+    // If opponent was disconnected and had a timer, cancel abandonment forfeit
+    if (disconnectTimers.has(gameId)) {
+      clearTimeout(disconnectTimers.get(gameId)!);
+      disconnectTimers.delete(gameId);
+      io.to(`game_${gameId}`).emit('game:opponent_reconnected');
     }
 
-    // Start game if both connected or if it's a bot game
-    if (game.status === 'waiting' && (game.isBot || (game.whiteConnected && game.blackConnected))) {
-      game.status = 'active';
-      game.lastMoveTimestamp = Date.now();
+    // Start game if waiting and both ready or bot
+    if (state.status === 'waiting' && (state.isBot || (state.whiteConnected && state.blackConnected))) {
+      state.status = 'active';
+      state.lastMoveTimestamp = Date.now();
+      await redisService.saveGameState(gameId, state);
+      activeGameIds.add(gameId);
+
       await db.collection('games').doc(gameId).update({ status: 'active' });
-      io.to(`game_${gameId}`).emit('game:start', { fen: game.chess.fen() });
+      io.to(`game_${gameId}`).emit('game:start', { fen: state.fen });
 
-      if (game.isBot && game.blackUid === 'bot' && game.chess.turn() === 'b') {
-        triggerBotMove(gameId);
-      } else if (game.isBot && game.whiteUid === 'bot' && game.chess.turn() === 'w') {
+      if (state.isBot && state.whiteUid === 'bot') {
         triggerBotMove(gameId);
       }
-    } else if (game.status === 'active') {
-      // Handle reconnects to an already active game
-      socket.emit('game:start', { fen: game.chess.fen() });
+    } else if (state.status === 'active') {
+      activeGameIds.add(gameId);
+      await redisService.saveGameState(gameId, state);
+
+      // Send immediate state sync on reconnect
+      socket.emit('game:start', { fen: state.fen });
       socket.emit('game:clock_sync', {
-        whiteTimeRemainingMs: game.whiteTimeRemainingMs,
-        blackTimeRemainingMs: game.blackTimeRemainingMs,
+        whiteTimeRemainingMs: state.whiteTimeRemainingMs,
+        blackTimeRemainingMs: state.blackTimeRemainingMs,
       });
 
-      if (game.isBot) {
-        // Ensure Stockfish instance exists (in case of backend restart)
+      if (state.isBot) {
         if (!stockfishService.hasInstance(gameId)) {
-          await stockfishService.createInstance(gameId, game.botDifficulty || 'casual');
-        }
-        
-        // Trigger bot if it's supposed to move
-        if (game.blackUid === 'bot' && game.chess.turn() === 'b') {
-          triggerBotMove(gameId);
-        } else if (game.whiteUid === 'bot' && game.chess.turn() === 'w') {
-          triggerBotMove(gameId);
+          await stockfishService.createInstance(gameId, state.botDifficulty || 'casual');
         }
       }
     }
   });
 
-  socket.on('game:move', async (data: { gameId: string; uid: string; move: string }) => {
-    const { gameId, uid, move } = data;
-    const game = activeGames.get(gameId);
-    
-    if (!game || game.status !== 'active') return;
-    
-    const isWhite = uid === game.whiteUid;
-    const isBlack = uid === game.blackUid;
-    
-    if ((isWhite && game.chess.turn() !== 'w') || (isBlack && game.chess.turn() !== 'b')) {
-      return; // Not their turn
+  socket.on('game:move', async (data: { gameId: string; uid: string; move: string; clientTimestamp?: number }) => {
+    const { gameId, uid, move, clientTimestamp } = data;
+    const state = await redisService.getGameState(gameId);
+    if (!state || state.status !== 'active') return;
+
+    const moveResult = PvpEngine.applyMove({
+      state,
+      uid,
+      move,
+      clientTimestamp,
+    });
+
+    if (!moveResult.success || !moveResult.newState) {
+      socket.emit('game:move_error', { error: moveResult.error || 'Invalid move' });
+      return;
     }
 
-    try {
-      const moveObj = game.chess.move(move, { strict: false });
-      if (!moveObj) return; // Invalid move
+    await redisService.saveGameState(gameId, moveResult.newState);
 
-      const now = Date.now();
-      const elapsed = now - game.lastMoveTimestamp;
-      
-      if (!game.isUnlimited) {
-        if (isWhite) {
-          game.whiteTimeRemainingMs -= elapsed;
-          game.whiteTimeRemainingMs += game.incrementMs; // Add increment
-        } else {
-          game.blackTimeRemainingMs -= elapsed;
-          game.blackTimeRemainingMs += game.incrementMs; // Add increment
-        }
-      }
-      
-      game.lastMoveTimestamp = now;
+    io.to(`game_${gameId}`).emit('game:move', {
+      move: moveResult.sanMove || move,
+      fen: moveResult.newState.fen,
+      pgn: moveResult.newState.pgn,
+      whiteTimeRemainingMs: moveResult.newState.whiteTimeRemainingMs,
+      blackTimeRemainingMs: moveResult.newState.blackTimeRemainingMs,
+    });
 
-      const fen = game.chess.fen();
-      const pgn = game.chess.pgn();
+    if (moveResult.gameEnding?.isOver && moveResult.gameEnding.winner && moveResult.gameEnding.reason) {
+      await handleGameOver(gameId, moveResult.gameEnding.winner, moveResult.gameEnding.reason);
+      return;
+    }
 
-      await db.collection('games').doc(gameId).update({
-        fen, pgn,
-        whiteTimeRemainingMs: game.whiteTimeRemainingMs,
-        blackTimeRemainingMs: game.blackTimeRemainingMs,
-      });
-
-      io.to(`game_${gameId}`).emit('game:move', {
-        move: moveObj.lan || moveObj.san, // send back a standardized string
-        fen, pgn,
-        whiteTimeRemainingMs: game.whiteTimeRemainingMs,
-        blackTimeRemainingMs: game.blackTimeRemainingMs,
-      });
-
-      checkGameEnding(gameId);
-
-      // Trigger bot if game is still active
-      if (game.isBot && activeGames.has(gameId)) {
-        triggerBotMove(gameId);
-      }
-    } catch (e) {
-      // chess.js throws on invalid moves in some versions
+    if (moveResult.newState.isBot) {
+      triggerBotMove(gameId);
     }
   });
 
-  socket.on('game:resign', (data: { gameId: string; uid: string }) => {
+  socket.on('game:resign', async (data: { gameId: string; uid: string }) => {
     const { gameId, uid } = data;
-    const game = activeGames.get(gameId);
-    if (!game) return;
+    const state = await redisService.getGameState(gameId);
+    if (!state || state.status !== 'active') return;
 
-    if (uid === game.whiteUid) handleGameOver(gameId, 'black', 'resignation');
-    else if (uid === game.blackUid) handleGameOver(gameId, 'white', 'resignation');
+    const winner = uid === state.whiteUid ? 'black' : 'white';
+    await handleGameOver(gameId, winner, 'resignation');
   });
 
-  socket.on('game:draw_offer', (data: { gameId: string; uid: string }) => {
+  socket.on('game:draw_offer', async (data: { gameId: string; uid: string }) => {
     const { gameId, uid } = data;
-    const game = activeGames.get(gameId);
-    if (!game || game.status !== 'active' || game.isBot) return;
+    const state = await redisService.getGameState(gameId);
+    if (!state || state.status !== 'active' || state.isBot) return;
 
-    game.drawOfferBy = uid === game.whiteUid ? 'white' : 'black';
+    state.drawOfferBy = uid === state.whiteUid ? 'white' : 'black';
+    await redisService.saveGameState(gameId, state);
+
     socket.to(`game_${gameId}`).emit('game:draw_offered');
   });
 
-  socket.on('game:draw_respond', (data: { gameId: string; uid: string; accept: boolean }) => {
+  socket.on('game:draw_respond', async (data: { gameId: string; uid: string; accept: boolean }) => {
     const { gameId, uid, accept } = data;
-    const game = activeGames.get(gameId);
-    if (!game || game.status !== 'active') return;
+    const state = await redisService.getGameState(gameId);
+    if (!state || state.status !== 'active') return;
 
-    const responder = uid === game.whiteUid ? 'white' : 'black';
-    if (game.drawOfferBy && game.drawOfferBy !== responder) {
+    const responder = uid === state.whiteUid ? 'white' : 'black';
+    if (state.drawOfferBy && state.drawOfferBy !== responder) {
       if (accept) {
-        handleGameOver(gameId, 'draw', 'agreed');
+        await handleGameOver(gameId, 'draw', 'agreed');
       } else {
-        game.drawOfferBy = null;
+        state.drawOfferBy = null;
+        await redisService.saveGameState(gameId, state);
         socket.to(`game_${gameId}`).emit('game:draw_declined');
       }
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     const gameId = (socket as any).gameId;
     const uid = (socket as any).uid;
     if (!gameId || !uid) return;
 
-    const game = activeGames.get(gameId);
-    if (!game || game.status !== 'active') return;
+    const state = await redisService.getGameState(gameId);
+    if (!state || state.status !== 'active') return;
 
-    if (uid === game.whiteUid) game.whiteConnected = false;
-    if (uid === game.blackUid) game.blackConnected = false;
+    if (uid === state.whiteUid) state.whiteConnected = false;
+    if (uid === state.blackUid) state.blackConnected = false;
+    await redisService.saveGameState(gameId, state);
 
     socket.to(`game_${gameId}`).emit('game:opponent_disconnected');
 
-    // Start 60s forfeit timer for paid, 30s for free
-    const timeoutMs = game.stakeAmountCrowns > 0 ? 60000 : 30000;
-    
-    game.disconnectTimeout = setTimeout(() => {
-      if (activeGames.has(gameId)) {
-        const winner = uid === game.whiteUid ? 'black' : 'white';
-        handleGameOver(gameId, winner, 'abandoned');
+    // Start Chess.com-style abandonment timer based on time control category
+    const timeoutMs = PvpEngine.getAbandonmentTimeoutMs(state.timeControlCategory);
+
+    if (disconnectTimers.has(gameId)) {
+      clearTimeout(disconnectTimers.get(gameId)!);
+    }
+
+    const timer = setTimeout(async () => {
+      const currentState = await redisService.getGameState(gameId);
+      if (currentState && currentState.status === 'active') {
+        const winner = uid === currentState.whiteUid ? 'black' : 'white';
+        await handleGameOver(gameId, winner, 'abandoned');
       }
     }, timeoutMs);
+
+    disconnectTimers.set(gameId, timer);
   });
 };

@@ -27,6 +27,7 @@ const envSchema = z.object({
   ZEPTOMAIL_FROM_NAME: z.string().default('Play CheckMate Africa'),
   EMAIL_PROVIDER: z.enum(['resend', 'zeptomail']).default('resend'),
   STOCKFISH_PATH: z.string().optional(),
+  REDIS_URL: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

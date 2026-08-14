@@ -2,6 +2,7 @@ import { db } from '../config/firebase.config';
 import * as admin from 'firebase-admin';
 import { QueueEntry } from './matchmaking.service';
 import { stockfishService } from './stockfish.service';
+import { redisService, LiveGameState } from './redis.service';
 import { resolveTimeControl, NO_TIMER_ID } from '@checkmate/shared-types';
 
 export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Promise<string> => {
@@ -13,6 +14,9 @@ export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Prom
   if (!tc) throw new Error('PvP games require a timed time control');
 
   const gameDocRef = db.collection('games').doc();
+  const gameId = gameDocRef.id;
+
+  const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   await gameDocRef.set({
     whiteUid,
@@ -26,7 +30,7 @@ export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Prom
     status: 'waiting',
     result: null,
     resultReason: null,
-    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    fen: initialFen,
     pgn: '',
     moves: [],
     whiteTimeRemainingMs: tc.baseTimeMs,
@@ -41,7 +45,34 @@ export const createGame = async (playerA: QueueEntry, playerB: QueueEntry): Prom
     completedAt: null,
   });
 
-  return gameDocRef.id;
+  // Seed live state in Redis
+  const liveState: LiveGameState = {
+    id: gameId,
+    whiteUid,
+    blackUid,
+    fen: initialFen,
+    pgn: '',
+    moves: [],
+    mode: playerA.mode,
+    isBot: false,
+    timeControlId: playerA.timeControlId,
+    timeControlCategory: tc.category,
+    baseTimeMs: tc.baseTimeMs,
+    incrementMs: tc.incrementMs,
+    isUnlimited: false,
+    stakeAmountCrowns: playerA.stakeAmountCrowns,
+    whiteTimeRemainingMs: tc.baseTimeMs,
+    blackTimeRemainingMs: tc.baseTimeMs,
+    lastMoveTimestamp: Date.now(),
+    status: 'waiting',
+    whiteConnected: false,
+    blackConnected: false,
+    drawOfferBy: null,
+    createdAt: Date.now(),
+  };
+  await redisService.saveGameState(gameId, liveState);
+
+  return gameId;
 };
 
 export const createBotGame = async (params: {
@@ -67,6 +98,9 @@ export const createBotGame = async (params: {
 
   const gameDocRef = db.collection('games').doc();
 
+  const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const gameId = gameDocRef.id;
+
   await gameDocRef.set({
     whiteUid: playerIsWhite ? uid : 'bot',
     blackUid: playerIsWhite ? 'bot' : uid,
@@ -81,7 +115,7 @@ export const createBotGame = async (params: {
     status: 'active', // Bot games start immediately
     result: null,
     resultReason: null,
-    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    fen: initialFen,
     pgn: '',
     moves: [],
     whiteTimeRemainingMs: tc?.baseTimeMs ?? 0,
@@ -94,10 +128,38 @@ export const createBotGame = async (params: {
     completedAt: null,
   });
 
-  // Create Stockfish instance for this game
-  await stockfishService.createInstance(gameDocRef.id, difficulty);
+  // Seed live state in Redis
+  const liveState: LiveGameState = {
+    id: gameId,
+    whiteUid: playerIsWhite ? uid : 'bot',
+    blackUid: playerIsWhite ? 'bot' : uid,
+    fen: initialFen,
+    pgn: '',
+    moves: [],
+    mode: 'bot',
+    isBot: true,
+    botDifficulty: difficulty,
+    timeControlId,
+    timeControlCategory: tc?.category ?? 'unlimited',
+    baseTimeMs: tc?.baseTimeMs ?? 0,
+    incrementMs: tc?.incrementMs ?? 0,
+    isUnlimited,
+    stakeAmountCrowns: 0,
+    whiteTimeRemainingMs: tc?.baseTimeMs ?? 0,
+    blackTimeRemainingMs: tc?.baseTimeMs ?? 0,
+    lastMoveTimestamp: Date.now(),
+    status: 'active',
+    whiteConnected: playerIsWhite,
+    blackConnected: !playerIsWhite,
+    drawOfferBy: null,
+    createdAt: Date.now(),
+  };
+  await redisService.saveGameState(gameId, liveState);
 
-  return gameDocRef.id;
+  // Create Stockfish instance for this game
+  await stockfishService.createInstance(gameId, difficulty);
+
+  return gameId;
 };
 
 export const getGame = async (gameId: string) => {

@@ -345,9 +345,88 @@ async function runAllSimulations() {
   }
 }
 
+async function createAndWatchDemoGame() {
+  const whiteUid = 'demo_white';
+  const blackUid = 'demo_black';
+  const gameDocRef = db.collection('games').doc();
+  const gameId = gameDocRef.id;
+  const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+  await gameDocRef.set({
+    whiteUid,
+    blackUid,
+    mode: 'demo',
+    isDemo: true,
+    isBot: false,
+    timeControlId: 'standard',
+    timeControlCategory: 'rapid',
+    baseTimeMs: 600000,
+    incrementMs: 0,
+    stakeAmountCrowns: 0,
+    status: 'waiting',
+    result: null,
+    resultReason: null,
+    fen: initialFen,
+    pgn: '',
+    moves: [],
+    whiteTimeRemainingMs: 600000,
+    blackTimeRemainingMs: 600000,
+    anticheat: { status: 'exempt', flagged: false },
+    payoutStatus: 'exempt',
+    createdAt: admin.firestore.Timestamp.now(),
+    completedAt: null,
+  });
+
+  const url = `http://localhost:3000/game/${gameId}`;
+
+  console.log(`\n===============================================================`);
+  console.log(`🎬 LIVE MATCH SHOWCASE READY!`);
+  console.log(`👉 Open this URL in your browser now:`);
+  console.log(`   \x1b[36m\x1b[4m${url}\x1b[0m`);
+  console.log(`===============================================================`);
+  console.log(`⏳ Opening match on your screen... countdown starting:\n`);
+  for (let i = 10; i > 0; i--) {
+    process.stdout.write(`\r   Starting live demo in ${i}s... `);
+    await delay(1000);
+  }
+  console.log(`\n\n  Connecting automated players...`);
+
+  const [whiteConn, blackConn] = await Promise.all([
+    connectPlayer(gameId, whiteUid, 'White'),
+    connectPlayer(gameId, blackUid, 'Black'),
+  ]);
+
+  console.log('  Waiting for game start...');
+  await Promise.all([whiteConn.started, blackConn.started]);
+  console.log('  ✨ Game active! Playing Scholar\'s Mate sequence on your screen...\n');
+
+  const moves = [
+    { socket: whiteConn.socket, uid: whiteUid, move: 'e4', desc: '1. White plays e4 (Pawn to e4)' },
+    { socket: blackConn.socket, uid: blackUid, move: 'e5', desc: '1... Black plays e5 (Pawn to e5)' },
+    { socket: whiteConn.socket, uid: whiteUid, move: 'Bc4', desc: '2. White plays Bc4 (Bishop develops to c4)' },
+    { socket: blackConn.socket, uid: blackUid, move: 'Nc6', desc: '2... Black plays Nc6 (Knight develops to c6)' },
+    { socket: whiteConn.socket, uid: whiteUid, move: 'Qh5', desc: '3. White plays Qh5 (Queen attacks f7 square!)' },
+    { socket: blackConn.socket, uid: blackUid, move: 'Nf6', desc: '3... Black plays Nf6 (Knight tries to defend)' },
+    { socket: whiteConn.socket, uid: whiteUid, move: 'Qxf7#', desc: '4. White plays Qxf7# - CHECKMATE! 👑' },
+  ];
+
+  for (const m of moves) {
+    await delay(2500); // 2.5 second delay so you can comfortably watch each piece animate
+    console.log(`  ♟️  ${m.desc}`);
+    makeMove(m.socket, gameId, m.uid, m.move);
+  }
+
+  console.log('\n  🎉 Game complete! Look at your browser for the Checkmate & Victory modal.');
+  await delay(10000);
+
+  whiteConn.socket.disconnect();
+  blackConn.socket.disconnect();
+  process.exit(0);
+}
+
 async function playLiveOnScreen(gameId: string) {
   console.log(`\n===============================================================`);
-  console.log(`🎬 WATCH MODE: Playing live moves in game: ${gameId}`);
+  console.log(`🎬 WATCH MODE: Connecting to game: ${gameId}`);
   console.log(`===============================================================\n`);
 
   const doc = await db.collection('games').doc(gameId).get();
@@ -360,38 +439,30 @@ async function playLiveOnScreen(gameId: string) {
   const whiteUid = gData.whiteUid;
   const blackUid = gData.blackUid;
 
-  console.log(`  Connecting automated players:`);
-  console.log(`  - White: ${whiteUid}`);
-  console.log(`  - Black: ${blackUid}`);
-
   const [whiteConn, blackConn] = await Promise.all([
     connectPlayer(gameId, whiteUid, 'White'),
     connectPlayer(gameId, blackUid, 'Black'),
   ]);
 
-  console.log('  Waiting for game start...');
   await Promise.all([whiteConn.started, blackConn.started]);
-  console.log('  ✨ Game is active! Beginning move sequence on your screen...\n');
 
   const moves = [
     { socket: whiteConn.socket, uid: whiteUid, move: 'e4', desc: '1. White plays e4' },
     { socket: blackConn.socket, uid: blackUid, move: 'e5', desc: '1... Black plays e5' },
-    { socket: whiteConn.socket, uid: whiteUid, move: 'Bc4', desc: '2. White develops Bishop to c4' },
-    { socket: blackConn.socket, uid: blackUid, move: 'Nc6', desc: '2... Black develops Knight to c6' },
-    { socket: whiteConn.socket, uid: whiteUid, move: 'Qh5', desc: '3. White brings Queen to h5 (Threatening Checkmate!)' },
-    { socket: blackConn.socket, uid: blackUid, move: 'Nf6', desc: '3... Black plays Knight to f6' },
+    { socket: whiteConn.socket, uid: whiteUid, move: 'Bc4', desc: '2. White plays Bc4' },
+    { socket: blackConn.socket, uid: blackUid, move: 'Nc6', desc: '2... Black plays Nc6' },
+    { socket: whiteConn.socket, uid: whiteUid, move: 'Qh5', desc: '3. White plays Qh5' },
+    { socket: blackConn.socket, uid: blackUid, move: 'Nf6', desc: '3... Black plays Nf6' },
     { socket: whiteConn.socket, uid: whiteUid, move: 'Qxf7#', desc: '4. White plays Qxf7# - CHECKMATE! 👑' },
   ];
 
   for (const m of moves) {
-    await delay(1500); // 1.5 second delay so you can watch each piece move!
-    console.log(`  ➡️  ${m.desc}`);
+    await delay(2000);
+    console.log(`  ♟️  ${m.desc}`);
     makeMove(m.socket, gameId, m.uid, m.move);
   }
 
-  console.log('\n  🎉 Game complete! Check your browser screen for the Victory / Defeat modal.');
-  await delay(3000);
-
+  await delay(4000);
   whiteConn.socket.disconnect();
   blackConn.socket.disconnect();
   process.exit(0);
@@ -402,9 +473,12 @@ async function playLiveOnScreen(gameId: string) {
 // -------------------------------------------------------------
 async function main() {
   const args = process.argv.slice(2);
+  const isDemo = args.includes('--demo') || args.includes('-d');
   const watchIndex = args.indexOf('--watch');
 
-  if (watchIndex !== -1 && args[watchIndex + 1]) {
+  if (isDemo) {
+    await createAndWatchDemoGame();
+  } else if (watchIndex !== -1 && args[watchIndex + 1]) {
     const targetGameId = args[watchIndex + 1];
     await playLiveOnScreen(targetGameId);
   } else {

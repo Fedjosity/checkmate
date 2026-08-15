@@ -84,14 +84,14 @@ export const getGame = async (req: Request, res: Response) => {
       return;
     }
 
-    // Verify requesting player is in this game
+    // Verify requesting player is in this game (unless demo/spectator mode)
     const isGuest = (req as any).isGuest;
     const requesterId = isGuest
       ? (req as any).guestUser.guestId
-      : (req as any).user.uid;
+      : (req as any).user?.uid;
 
     const gameData = game as any;
-    if (gameData.whiteUid !== requesterId && gameData.blackUid !== requesterId) {
+    if (gameData.mode !== 'demo' && !gameData.isDemo && gameData.whiteUid !== requesterId && gameData.blackUid !== requesterId) {
       res.status(403).json(error('You are not a participant in this game'));
       return;
     }

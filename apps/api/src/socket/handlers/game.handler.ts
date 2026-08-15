@@ -221,7 +221,10 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
       }
     }
 
-    if (uid !== state.whiteUid && uid !== state.blackUid) {
+    const isParticipant = uid === state.whiteUid || uid === state.blackUid;
+    const isDemo = state.mode === 'demo' || (state as any).isDemo;
+
+    if (!isParticipant && !isDemo) {
       socket.emit('error', { message: 'Not a participant' });
       return;
     }
@@ -229,6 +232,12 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
     socket.join(`game_${gameId}`);
     (socket as any).gameId = gameId;
     (socket as any).uid = uid;
+
+    if (!isParticipant && isDemo) {
+      // Spectator joined demo game
+      socket.emit('game:start', { fen: state.fen });
+      return;
+    }
 
     // Reload latest state in case of concurrent updates before setting connection flag
     const freshState = (await redisService.getGameState(gameId)) || state;

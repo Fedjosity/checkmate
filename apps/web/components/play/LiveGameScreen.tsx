@@ -22,10 +22,11 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
   const router = useRouter();
   const { user } = useAuth();
   
-  const uid = user?.uid || guestId;
+  const isDemo = gameData.mode === 'demo' || gameData.isDemo;
+  const uid = user?.uid || guestId || (isDemo ? 'spectator_demo' : undefined);
   const playerColor = uid === gameData.whiteUid ? 'white' : uid === gameData.blackUid ? 'black' : null;
 
-    const {
+  const {
     fen,
     whiteTimeRemainingMs,
     blackTimeRemainingMs,
@@ -49,13 +50,13 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid && !isDemo) {
       toast.error("You are not authenticated to view this game.");
       router.push('/play');
       return;
     }
 
-    joinGame(gameId, uid);
+    joinGame(gameId, uid || 'spectator_demo');
 
     const handleResize = () => {
       const vh = window.innerHeight;
@@ -71,7 +72,7 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
       leaveGame();
       window.removeEventListener('resize', handleResize);
     };
-  }, [gameId, uid, joinGame, leaveGame, router]);
+  }, [gameId, uid, isDemo, joinGame, leaveGame, router]);
 
   useEffect(() => {
     if (error) {
@@ -208,7 +209,7 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
     return {};
   }, [fen]);
 
-  if (!uid || !playerColor) return <div className="text-white text-center mt-20">Authenticating...</div>;
+  if (!uid && !isDemo) return <div className="text-white text-center mt-20">Authenticating...</div>;
 
   return (
     <div className="flex flex-col xl:flex-row items-center xl:items-stretch justify-center gap-4 lg:gap-8 min-h-screen p-2 sm:p-4 md:p-8 bg-background relative overflow-hidden">
@@ -230,17 +231,18 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
 
       <div className="w-full flex flex-col items-center max-w-[800px] z-10 shrink-0 lg:self-center">
         
-        {/* Opponent Card */}
+        {/* Opponent / Top Player Card */}
         <div className="w-full mb-4">
           <PlayerCard 
-            uid={playerColor === 'white' ? gameData.blackUid : gameData.whiteUid}
-            name={gameData.isBot ? `Stockfish (${gameData.botDifficulty})` : "Opponent"}
+            uid={playerColor === 'black' ? gameData.whiteUid : gameData.blackUid}
+            name={gameData.isBot ? `Stockfish (${gameData.botDifficulty})` : playerColor ? "Opponent" : "Simulated Black"}
             isBot={gameData.isBot}
-            color={playerColor === 'white' ? 'black' : 'white'}
-            timeRemainingMs={playerColor === 'white' ? blackTimeRemainingMs : whiteTimeRemainingMs}
+            color={playerColor === 'black' ? 'white' : 'black'}
+            timeRemainingMs={playerColor === 'black' ? whiteTimeRemainingMs : blackTimeRemainingMs}
             isActive={
-              (playerColor === 'white' && fen.split(' ')[1] === 'b') || 
-              (playerColor === 'black' && fen.split(' ')[1] === 'w')
+              playerColor 
+                ? ((playerColor === 'white' && fen.split(' ')[1] === 'b') || (playerColor === 'black' && fen.split(' ')[1] === 'w'))
+                : (fen.split(' ')[1] === 'b')
             }
           />
         </div>
@@ -257,8 +259,8 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
             onSquareClick={onSquareClick}
             onPieceDragBegin={onPieceDragBegin}
             onPieceDragEnd={() => setOptionSquares({})}
-            isDraggablePiece={({ piece }) => piece.startsWith(playerColor === 'white' ? 'w' : 'b')}
-            boardOrientation={playerColor as 'white' | 'black'}
+            isDraggablePiece={({ piece }) => playerColor ? piece.startsWith(playerColor === 'white' ? 'w' : 'b') : false}
+            boardOrientation={(playerColor || 'white') as 'white' | 'black'}
             customDarkSquareStyle={{ backgroundColor: "#3D3528" }}
             customLightSquareStyle={{ backgroundColor: "rgba(201, 168, 76, 0.85)" }}
             customBoardStyle={{
@@ -275,16 +277,17 @@ export function LiveGameScreen({ gameId, gameData, guestId }: LiveGameScreenProp
           />
         </div>
 
-        {/* My Card */}
+        {/* My / Bottom Player Card */}
         <div className="w-full mt-4">
           <PlayerCard 
-            uid={uid}
-            name={user ? user.displayName || "Anonymous" : "Guest"}
-            color={playerColor}
-            timeRemainingMs={playerColor === 'white' ? whiteTimeRemainingMs : blackTimeRemainingMs}
+            uid={playerColor ? uid : gameData.whiteUid}
+            name={playerColor ? (user ? user.displayName || "Anonymous" : "Guest") : "Simulated White"}
+            color={playerColor || 'white'}
+            timeRemainingMs={playerColor === 'black' ? blackTimeRemainingMs : whiteTimeRemainingMs}
             isActive={
-              (playerColor === 'white' && fen.split(' ')[1] === 'w') || 
-              (playerColor === 'black' && fen.split(' ')[1] === 'b')
+              playerColor 
+                ? ((playerColor === 'white' && fen.split(' ')[1] === 'w') || (playerColor === 'black' && fen.split(' ')[1] === 'b'))
+                : (fen.split(' ')[1] === 'w')
             }
           />
         </div>

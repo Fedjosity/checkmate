@@ -187,32 +187,38 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
         return;
       }
 
-      state = {
-        id: gameId,
-        whiteUid: gData.whiteUid,
-        blackUid: gData.blackUid,
-        fen: gData.fen,
-        pgn: gData.pgn || '',
-        moves: gData.moves || [],
-        mode: gData.mode || 'pvp',
-        isBot: gData.isBot ?? false,
-        botDifficulty: gData.botDifficulty,
-        timeControlId: gData.timeControlId || 'standard',
-        timeControlCategory: gData.timeControlCategory || 'blitz',
-        baseTimeMs: gData.baseTimeMs || 0,
-        incrementMs: gData.incrementMs || 0,
-        isUnlimited: gData.isUnlimited ?? false,
-        stakeAmountCrowns: gData.stakeAmountCrowns || 0,
-        whiteTimeRemainingMs: gData.whiteTimeRemainingMs || 0,
-        blackTimeRemainingMs: gData.blackTimeRemainingMs || 0,
-        lastMoveTimestamp: Date.now(),
-        status: gData.status as 'waiting' | 'active',
-        whiteConnected: false,
-        blackConnected: false,
-        drawOfferBy: null,
-        createdAt: Date.now(),
-      };
-      await redisService.saveGameState(gameId, state);
+      // Check again if another concurrent join created state while awaiting Firestore
+      const existing = await redisService.getGameState(gameId);
+      if (existing) {
+        state = existing;
+      } else {
+        state = {
+          id: gameId,
+          whiteUid: gData.whiteUid,
+          blackUid: gData.blackUid,
+          fen: gData.fen,
+          pgn: gData.pgn || '',
+          moves: gData.moves || [],
+          mode: gData.mode || 'pvp',
+          isBot: gData.isBot ?? false,
+          botDifficulty: gData.botDifficulty,
+          timeControlId: gData.timeControlId || 'standard',
+          timeControlCategory: gData.timeControlCategory || 'blitz',
+          baseTimeMs: gData.baseTimeMs || 0,
+          incrementMs: gData.incrementMs || 0,
+          isUnlimited: gData.isUnlimited ?? false,
+          stakeAmountCrowns: gData.stakeAmountCrowns || 0,
+          whiteTimeRemainingMs: gData.whiteTimeRemainingMs || 0,
+          blackTimeRemainingMs: gData.blackTimeRemainingMs || 0,
+          lastMoveTimestamp: Date.now(),
+          status: gData.status as 'waiting' | 'active',
+          whiteConnected: false,
+          blackConnected: false,
+          drawOfferBy: null,
+          createdAt: Date.now(),
+        };
+        await redisService.saveGameState(gameId, state);
+      }
     }
 
     if (uid !== state.whiteUid && uid !== state.blackUid) {
@@ -224,8 +230,11 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
     (socket as any).gameId = gameId;
     (socket as any).uid = uid;
 
-    if (uid === state.whiteUid) state.whiteConnected = true;
-    if (uid === state.blackUid) state.blackConnected = true;
+    // Reload latest state in case of concurrent updates before setting connection flag
+    const freshState = (await redisService.getGameState(gameId)) || state;
+    if (uid === freshState.whiteUid) freshState.whiteConnected = true;
+    if (uid === freshState.blackUid) freshState.blackConnected = true;
+    state = freshState;
 
     // Immediately persist connection flags to Redis so concurrent joins see each other
     await redisService.saveGameState(gameId, state);

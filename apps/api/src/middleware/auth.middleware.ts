@@ -34,13 +34,19 @@ export const allowGuestOrAuth = async (req: Request, res: Response, next: NextFu
   try {
     const authHeader = req.headers.authorization;
 
-    // Try Firebase auth first
+    // Try Firebase auth first if a valid-looking token is provided
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split('Bearer ')[1];
-      const decodedToken = await auth.verifyIdToken(token);
-      (req as any).user = decodedToken;
-      (req as any).isGuest = false;
-      return next();
+      if (token && token !== 'undefined' && token !== 'null' && token.trim().length > 0) {
+        try {
+          const decodedToken = await auth.verifyIdToken(token);
+          (req as any).user = decodedToken;
+          (req as any).isGuest = false;
+          return next();
+        } catch (tokenErr) {
+          // Token verification failed; proceed to check guest headers
+        }
+      }
     }
 
     // Fall back to guest session

@@ -49,31 +49,59 @@ export function startMatchmakingLoop(io: Server) {
         mode: entry.mode,
       };
 
-      const [playerA, playerB] = await Promise.all([
-        db.collection('users').doc(entry.uid).get(),
-        db.collection('users').doc(opponent.uid).get(),
-      ]);
+      const game = await gameService.getGame(gameId);
+      const isEntryWhite = (game as any)?.whiteUid === entry.uid;
 
-      const aData = playerA.data();
-      const bData = playerB.data();
+      // Resolve player A data
+      let aName = 'Player';
+      let aElo = entry.elo || 1200;
+      let aRank = entry.rank || rpToRank(0, false);
+      if (!entry.uid.startsWith('guest_')) {
+        const userDoc = await db.collection('users').doc(entry.uid).get();
+        const data = userDoc.data();
+        if (data) {
+          const tc = resolveTimeControl(entry.timeControlId);
+          const cat = tc ? tc.category : 'blitz';
+          aName = data.displayName || 'Player';
+          aElo = data.elo?.[cat] ?? 1200;
+          aRank = rpToRank(data.elo?.[`${cat}RP`] ?? 0, data.elo?.isTop500);
+        }
+      } else {
+        aName = 'Guest ' + entry.uid.slice(-4);
+      }
 
-      const tc = resolveTimeControl(entry.timeControlId);
-      const cat = tc ? tc.category : 'blitz';
+      // Resolve player B data
+      let bName = 'Player';
+      let bElo = opponent.elo || 1200;
+      let bRank = opponent.rank || rpToRank(0, false);
+      if (!opponent.uid.startsWith('guest_')) {
+        const userDoc = await db.collection('users').doc(opponent.uid).get();
+        const data = userDoc.data();
+        if (data) {
+          const tc = resolveTimeControl(opponent.timeControlId);
+          const cat = tc ? tc.category : 'blitz';
+          bName = data.displayName || 'Player';
+          bElo = data.elo?.[cat] ?? 1200;
+          bRank = rpToRank(data.elo?.[`${cat}RP`] ?? 0, data.elo?.isTop500);
+        }
+      } else {
+        bName = 'Guest ' + opponent.uid.slice(-4);
+      }
 
       io.to(entry.socketId).emit('matchmaking:match_found', {
         ...matchData,
-        opponentName: bData?.displayName,
-        opponentElo: bData?.elo?.[cat],
-        opponentRank: rpToRank(bData?.elo?.[`${cat}RP`] ?? 0, bData?.elo?.isTop500),
-        youAre: 'white', 
+        opponentName: bName,
+        opponentElo: bElo,
+        opponentRank: bRank,
+        youAre: isEntryWhite ? 'white' : 'black', 
       });
 
       io.to(opponent.socketId).emit('matchmaking:match_found', {
         ...matchData,
-        opponentName: aData?.displayName,
-        opponentElo: aData?.elo?.[cat],
-        opponentRank: rpToRank(aData?.elo?.[`${cat}RP`] ?? 0, aData?.elo?.isTop500),
-        youAre: 'black',
+        opponentName: aName,
+        opponentElo: aElo,
+        opponentRank: aRank,
+        youAre: isEntryWhite ? 'black' : 'white',
       });
 
       matchmakingService.removeFromQueue(entry.uid);

@@ -25,7 +25,6 @@ export const useMatchmaking = () => {
   const [matchData, setMatchData] = useState<MatchData | null>(null);
 
   useEffect(() => {
-    if (!user) return;
     const socket = getSocket();
 
     const onJoined = () => setState('searching');
@@ -36,7 +35,7 @@ export const useMatchmaking = () => {
       // Automatically redirect after 3 seconds
       setTimeout(() => {
         router.push(`/game/${data.gameId}`);
-      }, 3000);
+      }, 1500);
     };
     const onTimeout = (data: { message: string }) => {
       setState('timeout');
@@ -54,7 +53,7 @@ export const useMatchmaking = () => {
       socket.off('matchmaking:match_found', onMatchFound);
       socket.off('matchmaking:timeout', onTimeout);
     };
-  }, [user, router]);
+  }, [router]);
 
   const joinQueue = useCallback(async (
     mode: 'play_online' | 'competitive' | 'online_pro',

@@ -29,7 +29,21 @@ export function createGuestSession(): GuestSession {
 }
 
 export function getGuestSession(guestId: string): GuestSession | null {
-  const session = guestSessions.get(guestId);
+  if (!guestId || typeof guestId !== 'string') return null;
+  let session = guestSessions.get(guestId);
+  
+  // Auto-restore session for valid guest ID format (prevents 401s when dev server restarts)
+  if (!session && guestId.startsWith('guest_')) {
+    session = {
+      guestId,
+      displayName: 'Guest ' + guestId.slice(-4),
+      elo: 1200,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    };
+    guestSessions.set(guestId, session);
+  }
+
   if (!session) return null;
 
   // Check expiry

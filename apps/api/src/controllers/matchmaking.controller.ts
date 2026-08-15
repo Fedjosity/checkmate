@@ -7,24 +7,41 @@ import { rpToRank, resolveTimeControl } from '@checkmate/shared-types';
 export const joinLobby = async (req: Request, res: Response) => {
   try {
     const { mode, timeControlId, stakeAmountCrowns } = req.body;
-    const uid = (req as any).user.uid;
+    const isGuest = (req as any).isGuest;
+
+    let uid: string;
+    let elo: number = 1200;
+    let rank: any = rpToRank(0, false);
+
+    if (isGuest) {
+      if (mode === 'paid' || mode === 'competitive' || mode === 'online_pro') {
+        res.status(403).json({ success: false, error: 'Guests can only play casual Play Online' });
+        return;
+      }
+      const guest = (req as any).guestUser;
+      uid = guest.guestId;
+      elo = guest.elo || 1200;
+    } else {
+      uid = (req as any).user.uid;
+      if (mode === 'paid') {
+        await escrowCrowns(uid, stakeAmountCrowns, `escrow_${uid}_${Date.now()}`);
+      }
+
+      const userDoc = await db.collection('users').doc(uid).get();
+      const userData = userDoc.data();
+      if (userData) {
+        const tc = resolveTimeControl(timeControlId);
+        const cat = tc ? tc.category : 'blitz';
+        elo = userData.elo?.[cat] ?? 1200;
+        const rp = userData.elo?.[`${cat}RP`] ?? 0;
+        rank = rpToRank(rp, userData.elo?.isTop500);
+      }
+    }
 
     if (matchmakingService.getEntry(uid)) {
       res.status(409).json({ success: false, error: 'You are already in a matchmaking queue' });
       return;
     }
-
-    if (mode === 'paid') {
-      await escrowCrowns(uid, stakeAmountCrowns, `escrow_${uid}_${Date.now()}`);
-    }
-
-    const userDoc = await db.collection('users').doc(uid).get();
-    const userData = userDoc.data()!;
-    const tc = resolveTimeControl(timeControlId);
-    const cat = tc ? tc.category : 'blitz';
-    const elo = userData.elo?.[cat] ?? 1200;
-    const rp = userData.elo?.[`${cat}RP`] ?? 0;
-    const rank = rpToRank(rp, userData.elo?.isTop500);
 
     matchmakingService.addToQueue({
       uid,
@@ -46,10 +63,11 @@ export const joinLobby = async (req: Request, res: Response) => {
 
 export const leaveLobby = async (req: Request, res: Response) => {
   try {
-    const uid = (req as any).user.uid;
+    const isGuest = (req as any).isGuest;
+    const uid = isGuest ? (req as any).guestUser.guestId : (req as any).user.uid;
     const entry = matchmakingService.removeFromQueue(uid);
 
-    if (entry && entry.stakeAmountCrowns > 0) {
+    if (entry && entry.stakeAmountCrowns > 0 && !isGuest) {
       await releaseEscrow(uid, entry.stakeAmountCrowns);
     }
 
@@ -89,7 +107,8 @@ export const getQueueDepths = async (req: Request, res: Response) => {
 
 export const getStatus = async (req: Request, res: Response) => {
   try {
-    const uid = (req as any).user.uid;
+    const isGuest = (req as any).isGuest;
+    const uid = isGuest ? (req as any).guestUser.guestId : (req as any).user.uid;
     const entry = matchmakingService.getEntry(uid);
 
     if (entry) {

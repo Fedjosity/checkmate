@@ -227,6 +227,9 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
     if (uid === state.whiteUid) state.whiteConnected = true;
     if (uid === state.blackUid) state.blackConnected = true;
 
+    // Immediately persist connection flags to Redis so concurrent joins see each other
+    await redisService.saveGameState(gameId, state);
+
     // If opponent was disconnected and had a timer, cancel abandonment forfeit
     if (disconnectTimers.has(gameId)) {
       clearTimeout(disconnectTimers.get(gameId)!);
@@ -235,17 +238,22 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
     }
 
     // Start game if waiting and both ready or bot
-    if (state.status === 'waiting' && (state.isBot || (state.whiteConnected && state.blackConnected))) {
-      state.status = 'active';
-      state.lastMoveTimestamp = Date.now();
-      await redisService.saveGameState(gameId, state);
-      activeGameIds.add(gameId);
+    if (state.status === 'waiting') {
+      if (state.isBot || (state.whiteConnected && state.blackConnected)) {
+        state.status = 'active';
+        state.lastMoveTimestamp = Date.now();
+        await redisService.saveGameState(gameId, state);
+        activeGameIds.add(gameId);
 
-      await db.collection('games').doc(gameId).update({ status: 'active' });
-      io.to(`game_${gameId}`).emit('game:start', { fen: state.fen });
+        await db.collection('games').doc(gameId).update({ status: 'active' });
+        io.to(`game_${gameId}`).emit('game:start', { fen: state.fen });
 
-      if (state.isBot && state.whiteUid === 'bot') {
-        triggerBotMove(gameId);
+        if (state.isBot && state.whiteUid === 'bot') {
+          triggerBotMove(gameId);
+        }
+      } else {
+        // One player connected so far; show waiting for opponent
+        socket.emit('game:waiting');
       }
     } else if (state.status === 'active') {
       activeGameIds.add(gameId);

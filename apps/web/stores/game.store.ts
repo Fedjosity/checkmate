@@ -49,6 +49,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     socket.emit('game:join', { gameId, uid });
 
+    socket.on('game:waiting', () => {
+      set({ status: 'waiting' });
+    });
+
     socket.on('game:start', (data) => {
       playGameStartSound();
       set({ status: 'active', fen: data.fen });
@@ -108,6 +112,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   leaveGame: () => {
     const socket = getSocket();
+    socket.off('game:waiting');
     socket.off('game:start');
     socket.off('game:move');
     socket.off('game:clock_sync');

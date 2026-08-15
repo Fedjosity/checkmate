@@ -135,7 +135,17 @@ export class PvpEngine {
       return { success: false, error: 'User is not a player in this game' };
     }
 
-    const chess = new Chess(state.fen);
+    const chess = new Chess();
+    if (state.pgn && state.pgn.trim().length > 0) {
+      try {
+        chess.loadPgn(state.pgn);
+      } catch {
+        chess.load(state.fen);
+      }
+    } else {
+      chess.load(state.fen);
+    }
+
     const activeTurn = chess.turn(); // 'w' | 'b'
 
     if ((isWhite && activeTurn !== 'w') || (isBlack && activeTurn !== 'b')) {

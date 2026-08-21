@@ -11,7 +11,8 @@
     "test:simulate": "ts-node tests/simulate-games.ts",
     "test:demo": "ts-node tests/simulate-games.ts --demo",
     "test:phase-b": "ts-node tests/simulate-phase-b.ts",
-    "test:phase-c": "ts-node tests/simulate-phase-c.ts"
+    "test:phase-c": "ts-node tests/simulate-phase-c.ts",
+    "test:phase-d": "ts-node tests/simulate-phase-d.ts"
   },
   "dependencies": {
     "@checkmate/shared-types": "workspace:*",

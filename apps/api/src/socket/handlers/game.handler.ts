@@ -241,6 +241,8 @@ export const registerGameHandlers = (io: Server, socket: Socket) => {
 
     // Reload latest state in case of concurrent updates before setting connection flag
     const freshState = (await redisService.getGameState(gameId)) || state;
+    if (state.whiteConnected) freshState.whiteConnected = true;
+    if (state.blackConnected) freshState.blackConnected = true;
     if (uid === freshState.whiteUid) freshState.whiteConnected = true;
     if (uid === freshState.blackUid) freshState.blackConnected = true;
     state = freshState;

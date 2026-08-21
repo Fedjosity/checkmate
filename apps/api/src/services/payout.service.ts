@@ -12,9 +12,8 @@ export const processWin = async (params: {
 }) => {
   const { gameId, winnerUid, loserUid, timeControl, stakeAmountCrowns } = params;
 
-  // Calculate payout: 8% fee = 0.92 multiplier
-  // So total pool is 2 * stake, minus 8% fee
-  const winnerPayout = Math.floor(stakeAmountCrowns * 2 * 0.92);
+  // Winner receives 100% of the combined match pool (no match fee)
+  const winnerPayout = stakeAmountCrowns * 2;
 
   // Credit payout
   if (winnerPayout > 0) {

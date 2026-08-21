@@ -116,7 +116,7 @@ export const handleGameOver = async (gameId: string, result: 'white' | 'black' |
     ioInstance.to(`game_${gameId}`).emit('game:over', {
       result,
       reason,
-      payout: state.stakeAmountCrowns > 0 ? state.stakeAmountCrowns * 1.9 : 0,
+      payout: state.stakeAmountCrowns > 0 ? state.stakeAmountCrowns * 2 : 0,
     });
   }
 

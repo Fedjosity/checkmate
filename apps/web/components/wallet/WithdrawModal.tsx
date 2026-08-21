@@ -83,7 +83,10 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
   };
 
   const crownsAmount = parseInt(crownsInput, 10) || 0;
-  const usdValue = crownsAmount / 100;
+  const grossUsdValue = crownsAmount / 100;
+  const withdrawalFeePercent = 8;
+  const feeUsdValue = grossUsdValue * (withdrawalFeePercent / 100);
+  const netUsdValue = grossUsdValue - feeUsdValue;
 
   const kycStatus = user?.kycStatus || 'unverified';
 
@@ -104,16 +107,10 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <div className="text-center py-8">
-          <VerifiedUserIcon className="text-orange-500 mb-4 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]" style={{ fontSize: 48 }} />
-          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Action Required</h2>
-          <p className="text-muted text-sm mb-6 leading-relaxed">
-            There was an issue with your verification. You may need to provide a clearer photo or redo the liveness check.
-          </p>
-          
-          <div className="flex gap-3">
-            <Button variant="ghost" className="w-full" onClick={onClose}>Cancel</Button>
-            <Button variant="primary" className="w-full !bg-orange-500 hover:!bg-orange-600 !text-white" onClick={handleStartKyc} isLoading={isLoading}>Resume Verification</Button>
-          </div>
+          <VerifiedUserIcon className="text-gold mb-4" style={{ fontSize: 48 }} />
+          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Under Review</h2>
+          <p className="text-muted text-sm mb-6">Your resubmitted verification documents are being reviewed. This usually takes a few minutes.</p>
+          <Button variant="ghost" onClick={onClose} className="w-full">Close</Button>
         </div>
       </Modal>
     );
@@ -123,15 +120,18 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <div className="text-center py-8">
-          <VerifiedUserIcon className="text-gold mb-4 drop-shadow-[0_0_15px_rgba(201,168,76,0.3)]" style={{ fontSize: 48 }} />
-          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Verify Your Identity</h2>
-          <p className="text-muted text-sm mb-6 leading-relaxed">
-            To keep the platform secure and comply with regulations, we require a quick identity check before your first withdrawal.
+          <VerifiedUserIcon className="text-gold mb-4" style={{ fontSize: 48 }} />
+          <h2 className="text-xl font-bold text-white mb-2 tracking-wide">Identity Verification Required</h2>
+          <p className="text-muted text-sm mb-6">
+            To comply with financial regulations and protect your winnings, please verify your identity before withdrawing.
           </p>
-          
-          <div className="flex gap-3">
-            <Button variant="ghost" className="w-full" onClick={onClose}>Cancel</Button>
-            <Button variant="primary" className="w-full" onClick={handleStartKyc} isLoading={isLoading}>Start Verification</Button>
+          <div className="flex flex-col gap-3">
+            <Button variant="primary" onClick={handleStartKyc} isLoading={isLoading} className="w-full">
+              Verify Identity with ID
+            </Button>
+            <Button variant="ghost" onClick={onClose} className="w-full">
+              Cancel
+            </Button>
           </div>
         </div>
       </Modal>
@@ -142,11 +142,10 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
     <Modal isOpen={isOpen} onClose={onClose}>
       <h2 className="text-xl font-bold text-white mb-6 tracking-wide">Withdraw Earnings</h2>
       <div className="space-y-6">
-        <div className="bg-surface p-4 rounded-xl border border-border">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted font-bold uppercase tracking-widest">
-              Available to Withdraw
-            </span>
+        {/* Crown Balance Indicator */}
+        <div className="bg-surface-bright p-4 rounded-xl border border-border/50">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted">Available Balance</span>
             <span className="flex items-center gap-2 text-gold font-stats-mono font-bold">
               <Image src="/Crown Coin Logo Official.png" alt="Crown" width={16} height={16} className="object-contain" />
               {maxCrowns.toLocaleString()}
@@ -171,9 +170,28 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
           </div>
 
           <div className="mt-3 text-sm font-stats-mono text-muted text-right">
-            ≈ ${usdValue.toFixed(2)} USD
+            ≈ ${grossUsdValue.toFixed(2)} USD
           </div>
         </div>
+
+        {/* Fee Breakdown */}
+        {crownsAmount >= 200 && (
+          <div className="bg-surface p-3.5 rounded-xl border border-border text-xs space-y-2 font-stats-mono">
+            <div className="flex justify-between text-muted">
+              <span>Withdrawal Amount:</span>
+              <span className="text-white">${grossUsdValue.toFixed(2)} USD</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Platform Fee (8%):</span>
+              <span className="text-red-400">-${feeUsdValue.toFixed(2)} USD</span>
+            </div>
+            <div className="h-px bg-border my-1" />
+            <div className="flex justify-between font-bold">
+              <span className="text-muted">Estimated Payout:</span>
+              <span className="text-gold text-sm">${netUsdValue.toFixed(2)} USD</span>
+            </div>
+          </div>
+        )}
 
         {/* Bank Account Selection */}
         <div className="bg-surface-bright p-4 rounded-xl border border-border/50">
@@ -212,7 +230,7 @@ export function WithdrawModal({ isOpen, onClose }: WithdrawModalProps) {
 
         <div className="text-xs text-muted text-center space-y-1">
           <p>Transfers typically take 1-3 business days.</p>
-          <p>CheckMate covers all withdrawal fees.</p>
+          <p className="text-[11px] text-muted/70">8% platform fee is deducted at withdrawal.</p>
         </div>
 
         <div className="flex gap-3">

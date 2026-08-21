@@ -28,6 +28,8 @@ const envSchema = z.object({
   EMAIL_PROVIDER: z.enum(['resend', 'zeptomail']).default('resend'),
   STOCKFISH_PATH: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  CROWN_PURCHASE_FEE_PERCENT: z.string().default('2').transform(Number),
+  WITHDRAWAL_FEE_PERCENT: z.string().default('8').transform(Number),
 });
 
 const _env = envSchema.safeParse(process.env);

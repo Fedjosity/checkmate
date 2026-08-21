@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { db } from "../config/firebase.config";
+import { env } from "../config/env.config";
 import { logger } from "../utils/logger";
 import { success, error } from "../utils/response";
 import { AppError } from "../utils/errors";
@@ -92,7 +93,10 @@ export const walletController = {
       }
 
       const crowns = bundle.crowns;
-      const priceWithFeeUSD = bundle.priceWithFeeUSD;
+      // Calculate purchase price with configurable platform fee
+      const purchaseFeePercent = env.CROWN_PURCHASE_FEE_PERCENT ?? 2;
+      const baseUSD = crowns / 100;
+      const priceWithFeeUSD = Number((baseUSD * (1 + purchaseFeePercent / 100)).toFixed(2));
       const selectedBundleId = bundle.id;
 
       // Get user info for payment
@@ -116,6 +120,7 @@ export const walletController = {
           type: "crown_purchase",
           crownsAmount: crowns,
           usdAmount: Math.round(priceWithFeeUSD * 100),
+          feePercent: purchaseFeePercent,
           status: "pending",
           provider: "flutterwave",
           providerRef: null,
@@ -175,13 +180,16 @@ export const walletController = {
       }
 
       const currency = getCurrencyForCountry(userData.country ?? "Other");
-      const usdAmount = crowns / 100;
+      const withdrawalFeePercent = env.WITHDRAWAL_FEE_PERCENT ?? 8;
+      const grossUsdAmount = crowns / 100;
+      const feeUsdAmount = Number((grossUsdAmount * (withdrawalFeePercent / 100)).toFixed(2));
+      const netUsdAmount = Number((grossUsdAmount - feeUsdAmount).toFixed(2));
       const reference = `cm_wdl_${uid}_${Date.now()}`;
 
       // Debit Crowns atomically
       await walletService.debitWallet(uid, crowns, reference, "withdrawal");
 
-      // Initiate Flutterwave transfer
+      // Initiate Flutterwave transfer for net payout amount
       let transferId = "";
       try {
         const result = await flutterwaveService.initiateTransfer({
@@ -189,7 +197,7 @@ export const walletController = {
           bankCode: bankAccount.bankCode,
           accountNumber: bankAccount.accountNumber,
           accountName: bankAccount.accountName,
-          amountUSD: usdAmount,
+          amountUSD: netUsdAmount,
           currency,
           reference,
         });
@@ -206,9 +214,13 @@ export const walletController = {
         throw transferErr;
       }
 
-      // Update transaction with Flutterwave transfer ID
+      // Update transaction with Flutterwave transfer ID & fee breakdown
       await db.collection("transactions").doc(reference).update({
         providerRef: transferId,
+        grossUsdAmount,
+        feeUsdAmount,
+        netUsdAmount,
+        withdrawalFeePercent,
       });
 
       res.json(
@@ -216,7 +228,10 @@ export const walletController = {
           reference,
           status: "pending",
           crownsDeducted: crowns,
-          usdAmount,
+          grossUsdAmount,
+          feeUsdAmount,
+          netUsdAmount,
+          withdrawalFeePercent,
         }),
       );
     } catch (err: any) {

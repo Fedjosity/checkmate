@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:simulate": "ts-node tests/simulate-games.ts",
     "test:demo": "ts-node tests/simulate-games.ts --demo",
-    "test:phase-b": "ts-node tests/simulate-phase-b.ts"
+    "test:phase-b": "ts-node tests/simulate-phase-b.ts",
+    "test:phase-c": "ts-node tests/simulate-phase-c.ts"
   },
   "dependencies": {
     "@checkmate/shared-types": "workspace:*",

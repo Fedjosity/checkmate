@@ -29,3 +29,25 @@ export interface TimeControl {
   initial: number; // in seconds
   increment: number; // in seconds
 }
+
+export interface GameArchiveEntry {
+  id: string;
+  opponent: {
+    uid: string;
+    displayName: string;
+    avatarUrl: string | null;
+    country: string;
+    elo: number;
+  };
+  userColor: 'white' | 'black';
+  result: 'win' | 'loss' | 'draw';
+  resultReason: string;
+  timeControlCategory: string;
+  timeControlId: string;
+  stakeAmountCrowns: number;
+  netCrownsWon: number;
+  movesCount: number;
+  pgn: string;
+  fen: string;
+  completedAt: string;
+}

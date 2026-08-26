@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPublicProfile, getUserGameHistory, getHeadToHead } from "@/lib/api/users";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 import { PublicUser, GameArchiveEntry, HeadToHeadStats, rpToRank, getRankProgress } from "@checkmate/shared-types";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { cn } from "@/lib/utils/cn";
@@ -19,24 +19,40 @@ import SportsKabaddiIcon from "@mui/icons-material/SportsKabaddi";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import PublicIcon from "@mui/icons-material/Public";
+import LoginIcon from "@mui/icons-material/Login";
 
 export default function UserProfilePage() {
+  const router = useRouter();
   const params = useParams();
-  const rawUid = params?.uid as string;
-  const { user: authUser } = useAuthStore();
+  const rawUid = params?.uid as string | undefined;
+  const { user: authUser, isLoading: isAuthLoading, isAuthenticated } = useAuth();
 
-  const isOwnProfile = rawUid === "me" || rawUid === authUser?.uid;
+  const isOwnProfile = !rawUid || rawUid === "me" || (!!authUser?.uid && rawUid === authUser.uid);
   const targetUid = isOwnProfile ? authUser?.uid : rawUid;
 
-  const [profile, setProfile] = useState<PublicUser | null>(null);
+  const [profile, setProfile] = useState<PublicUser | null>(
+    isOwnProfile && authUser ? (authUser as unknown as PublicUser) : null
+  );
   const [games, setGames] = useState<GameArchiveEntry[]>([]);
   const [h2h, setH2h] = useState<HeadToHeadStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!profile);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Sync auth user to profile state when viewing own profile
+  useEffect(() => {
+    if (isOwnProfile && authUser) {
+      setProfile((prev) => prev || (authUser as unknown as PublicUser));
+    }
+  }, [isOwnProfile, authUser]);
+
   const fetchProfileData = async () => {
-    if (!targetUid) return;
-    setIsLoading(true);
+    if (!targetUid) {
+      if (!isAuthLoading && !authUser) {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     try {
       const [profRes, gamesRes] = await Promise.all([
         getPublicProfile(targetUid),
@@ -70,24 +86,63 @@ export default function UserProfilePage() {
   };
 
   useEffect(() => {
-    fetchProfileData();
-  }, [targetUid, isOwnProfile, authUser?.uid]);
+    if (targetUid) {
+      fetchProfileData();
+    } else if (!isAuthLoading) {
+      setIsLoading(false);
+    }
+  }, [targetUid, isAuthLoading]);
 
-  if (isLoading) {
+  // Auth is still hydrating or profile initial load
+  if (isLoading && isAuthLoading) {
     return (
       <div className="min-h-screen bg-background text-white py-12 px-4 max-w-6xl mx-auto space-y-8 animate-pulse">
         <div className="h-64 rounded-3xl bg-surface/60 border border-border/40" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-36" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-36">
+          <div className="rounded-2xl bg-surface/60 border border-border/40" />
+          <div className="rounded-2xl bg-surface/60 border border-border/40" />
+          <div className="rounded-2xl bg-surface/60 border border-border/40" />
+          <div className="rounded-2xl bg-surface/60 border border-border/40" />
+        </div>
         <div className="h-96 rounded-3xl bg-surface/60 border border-border/40" />
+      </div>
+    );
+  }
+
+  // Not logged in and tried to view /profile/me
+  if (isOwnProfile && !authUser && !isAuthLoading) {
+    return (
+      <div className="min-h-[70vh] bg-background text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-gold/10 text-gold flex items-center justify-center border border-gold/30 mb-4 shadow-[0_0_25px_rgba(201,168,76,0.15)]">
+          <LoginIcon fontSize="large" />
+        </div>
+        <h2 className="text-2xl font-bold font-headline mb-2">Authentication Required</h2>
+        <p className="text-sm text-on-surface-variant max-w-md mb-6">
+          Please log in to your CheckMate account to view your competitive rating, match history, and profile stats.
+        </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="px-6 py-2.5 bg-gold text-background hover:bg-gold-light font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/leaderboard"
+            className="px-6 py-2.5 bg-surface hover:bg-surface-light border border-border text-white text-sm font-semibold rounded-xl transition-all"
+          >
+            Explore Leaderboard
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (!profile && !targetUid) {
     return (
-      <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center p-4">
-        <h2 className="text-2xl font-bold font-headline mb-2">User Not Found</h2>
-        <p className="text-sm text-on-surface-variant mb-6">The requested player profile does not exist.</p>
+      <div className="min-h-[70vh] bg-background text-white flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-2xl font-bold font-headline mb-2">Player Not Found</h2>
+        <p className="text-sm text-on-surface-variant mb-6">The requested player profile does not exist or has been removed.</p>
         <Link href="/leaderboard" className="px-6 py-2.5 bg-gold text-background font-bold rounded-xl">
           Back to Leaderboard
         </Link>
@@ -151,8 +206,8 @@ export default function UserProfilePage() {
             <div className="relative">
               <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-2 border-gold shadow-[0_0_25px_rgba(201,168,76,0.25)] bg-black/80 ring-4 ring-gold/20">
                 <img
-                  src={profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUid}`}
-                  alt={profile?.displayName}
+                  src={profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUid || 'player'}`}
+                  alt={profile?.displayName || 'Player'}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -166,7 +221,7 @@ export default function UserProfilePage() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                 <h1 className="text-2xl sm:text-3xl font-headline font-black text-white">
-                  {profile?.displayName}
+                  {profile?.displayName || 'Player'}
                 </h1>
                 {profile?.country && (
                   <span className="text-xs px-2.5 py-1 rounded-full bg-surface-light border border-border/60 text-on-surface-variant font-mono flex items-center gap-1">
